@@ -101,128 +101,127 @@ Resources:
       Protocol: email
       TopicArn: !Ref FallbackTopic
   SlackExecutionRole:
-      Type: 'AWS::IAM::Role'
-      Properties:
-        AssumeRolePolicyDocument:
+    Type: 'AWS::IAM::Role'
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+        - Effect: Allow
+          Principal:
+            Service:
+            - lambda.amazonaws.com
+          Action:
+          - sts:AssumeRole
+      Path: "/"
+      Policies:
+      - PolicyName: root
+        PolicyDocument:
           Version: '2012-10-17'
           Statement:
           - Effect: Allow
-            Principal:
-              Service:
-              - lambda.amazonaws.com
             Action:
-            - sts:AssumeRole
-        Path: "/"
-        Policies:
-        - PolicyName: root
-          PolicyDocument:
-            Version: '2012-10-17'
-            Statement:
-            - Effect: Allow
-              Action:
-              - logs:*
-              Resource: arn:aws:logs:*:*:*
-
+            - logs:*
+            Resource: arn:aws:logs:*:*:*
   SnsToSlack:
-      Type: 'AWS::Lambda::Function'
-      Properties:
-        Handler: index.lambda_handler
-        Timeout: 25
-        TracingConfig:
-          Mode: PassThrough
-        Role: !Ref SlackExecutionRole
-        Runtime: nodejs8.10
-        Code:
-          ZipFile: !Sub |
-            var https = require('https');
-            var util = require('util');
+    Type: 'AWS::Lambda::Function'
+    Properties:
+      Handler: index.lambda_handler
+      Timeout: 25
+      TracingConfig:
+        Mode: PassThrough
+      Role: !Ref SlackExecutionRole
+      Runtime: nodejs8.10
+      Code:
+        ZipFile: !Sub |
+          var https = require('https');
+          var util = require('util');
 
-            exports.handler = function(event, context) {
-                console.log(JSON.stringify(event, null, 2));
-                console.log('From SNS:', event.Records[0].Sns.Message);
+          exports.handler = function(event, context) {
+              console.log(JSON.stringify(event, null, 2));
+              console.log('From SNS:', event.Records[0].Sns.Message);
 
-                var postData = {
-                    "channel": "scoreboard-sns",
-                    "username": "AWS SNS via Lambda :: Ops",
-                    "text": "*" + event.Records[0].Sns.Subject + "*"
-                };
+              var postData = {
+                  "channel": "scoreboard-sns",
+                  "username": "AWS SNS via Lambda :: Ops",
+                  "text": "*" + event.Records[0].Sns.Subject + "*"
+              };
 
-                var message = event.Records[0].Sns.Message;
-                var severity = "good";
+              var message = event.Records[0].Sns.Message;
+              var severity = "good";
 
-                var dangerMessages = [
-                    " but with errors",
-                    " to RED",
-                    "During an aborted deployment",
-                    "Failed to deploy application",
-                    "Failed to deploy configuration",
-                    "has a dependent object",
-                    "is not authorised to perform",
-                    "Pending to Degraded",
-                    "Stack deletion failed",
-                    "Unsuccessful command execution",
-                    "You do not have permission",
-                    "Your quota allows for 0 more running instance"];
+              var dangerMessages = [
+                  " but with errors",
+                  " to RED",
+                  "During an aborted deployment",
+                  "Failed to deploy application",
+                  "Failed to deploy configuration",
+                  "has a dependent object",
+                  "is not authorised to perform",
+                  "Pending to Degraded",
+                  "Stack deletion failed",
+                  "Unsuccessful command execution",
+                  "You do not have permission",
+                  "Your quota allows for 0 more running instance"];
 
-                var warningMessages = [
-                    " aborted operation.",
-                    " to YELLOW",
-                    "Adding instance ",
-                    "Degraded to Info",
-                    "Deleting SNS topic",
-                    "is currently running under desired capacity",
-                    "Ok to Info",
-                    "Ok to Warning",
-                    "Pending Initialization",
-                    "Removed instance ",
-                    "Rollback of environment"
-                    ];
+              var warningMessages = [
+                  " aborted operation.",
+                  " to YELLOW",
+                  "Adding instance ",
+                  "Degraded to Info",
+                  "Deleting SNS topic",
+                  "is currently running under desired capacity",
+                  "Ok to Info",
+                  "Ok to Warning",
+                  "Pending Initialization",
+                  "Removed instance ",
+                  "Rollback of environment"
+                  ];
 
-                for(var dangerMessagesItem in dangerMessages) {
-                    if (message.indexOf(dangerMessages[dangerMessagesItem]) != -1) {
-                        severity = "danger";
-                        break;
-                    }
-                }
+              for(var dangerMessagesItem in dangerMessages) {
+                  if (message.indexOf(dangerMessages[dangerMessagesItem]) != -1) {
+                      severity = "danger";
+                      break;
+                  }
+              }
 
-                // Only check for warning messages if necessary
-                if (severity == "good") {
-                    for(var warningMessagesItem in warningMessages) {
-                        if (message.indexOf(warningMessages[warningMessagesItem]) != -1) {
-                            severity = "warning";
-                            break;
-                        }
-                    }
-                }
+              // Only check for warning messages if necessary
+              if (severity == "good") {
+                  for(var warningMessagesItem in warningMessages) {
+                      if (message.indexOf(warningMessages[warningMessagesItem]) != -1) {
+                          severity = "warning";
+                          break;
+                      }
+                  }
+              }
 
-                postData.attachments = [
-                    {
-                        "color": severity,
-                        "text": message
-                    }
-                ];
+              postData.attachments = [
+                  {
+                      "color": severity,
+                      "text": message
+                  }
+              ];
 
-                var options = {
-                    method: 'POST',
-                    hostname: 'hooks.slack.com',
-                    port: 443,
-                    path: '/services/${SlackEndpoint}'
-                };
+              var options = {
+                  method: 'POST',
+                  hostname: 'hooks.slack.com',
+                  port: 443,
+                  path: '/services/${SlackEndpoint}'
+              };
 
-                var req = https.request(options, function(res) {
-                  res.setEncoding('utf8');
-                  res.on('data', function (chunk) {
-                    context.done(null);
-                  });
+              var req = https.request(options, function(res) {
+                res.setEncoding('utf8');
+                res.on('data', function (chunk) {
+                  context.done(null);
                 });
+              });
 
-                req.on('error', function(e) {
-                  console.log('problem with request: ' + e.message);
-                });
+              req.on('error', function(e) {
+                console.log('problem with request: ' + e.message);
+              });
 
-                req.write(util.format("%j", postData));
-                req.end();
-            };
+              req.write(util.format("%j", postData));
+              req.end();
+          };
 
 Outputs:
   TemplateID:
