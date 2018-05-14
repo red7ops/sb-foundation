@@ -1,0 +1,241 @@
+AWSTemplateFormatVersion: '2010-09-09'
+
+Description: 'Operations: Alert topic'
+
+Metadata:
+  'AWS::CloudFormation::Interface':
+    ParameterGroups:
+    - Label:
+        default: 'Alert Parameters'
+      Parameters:
+      - HttpsEndpoint
+      - SlackEndpoint
+    - Label:
+        default: 'Fallback Parameters'
+      Parameters:
+      - FallbackEmail
+Parameters:
+  HttpsEndpoint:
+    Description: 'HTTPS endpoint that will receive alerts via POST requests'
+    Type: String
+  FallbackEmail:
+    Description: 'Optional email address that will receive alerts if alerts can not be delivered'
+    Type: String
+    Default: ''
+  SlackEndpoint:
+    Description: 'Custom endpoint for slack notifications.'
+    Type: String
+Conditions:
+  HasFallbackEmail: !Not [!Equals [!Ref FallbackEmail, '']]
+Resources:
+  Topic:
+    Type: 'AWS::SNS::Topic'
+    Properties: {}
+  TopicPolicy:
+    Type: 'AWS::SNS::TopicPolicy'
+    Properties:
+      PolicyDocument:
+        Id: Id1
+        Version: '2012-10-17'
+        Statement:
+        - Sid: Sid1
+          Effect: Allow
+          Principal:
+            Service:
+            - 'events.amazonaws.com' # Allow CloudWatch Events
+            - 'budgets.amazonaws.com' # Allow Budget Notifications
+            - 'rds.amazonaws.com' # Allow RDS Events
+            - 's3.amazonaws.com' # Allow S3 Event Notifications
+          Action: 'sns:Publish'
+          Resource: !Ref Topic
+        - Sid: Sid2
+          Effect: Allow
+          Principal:
+            AWS: '*' # Allow CloudWatch Alarms, ElastiCache Notifications, Elastic Beanstalk Notifications, Auto Scaling Notification
+          Action: 'sns:Publish'
+          Resource: !Ref Topic
+          Condition:
+            StringEquals:
+              'AWS:SourceOwner': !Ref 'AWS::AccountId'
+        - Sid: Sid3
+          Effect: Allow
+          Principal:
+            Service: 'ses.amazonaws.com' # Allow SES Notifications & Events
+          Action: 'sns:Publish'
+          Resource: !Ref Topic
+          Condition:
+            StringEquals:
+              'AWS:Referer': !Ref 'AWS::AccountId'
+      Topics:
+      - !Ref Topic
+  FallbackTopic:
+    Type: 'AWS::SNS::Topic'
+    Properties: {}
+  NumberOfNotificationsFailedTooHighAlarm:
+    Type: 'AWS::CloudWatch::Alarm'
+    Properties:
+      AlarmDescription: 'Alerts could not be delivered'
+      Namespace: 'AWS/SNS'
+      MetricName: NumberOfNotificationsFailed
+      Statistic: Sum
+      Period: 60
+      EvaluationPeriods: 1
+      ComparisonOperator: GreaterThanThreshold
+      Threshold: 0
+      AlarmActions:
+      - !Ref FallbackTopic
+      Dimensions:
+      - Name: TopicName
+        Value: !GetAtt Topic.TopicName
+  HttpsEndpointSubscription:
+    Type: 'AWS::SNS::Subscription'
+    Properties:
+      Endpoint: !Ref HttpsEndpoint
+      Protocol: https
+      TopicArn: !Ref Topic
+  FallbackEmailSubscription:
+    Condition: HasFallbackEmail
+    Type: 'AWS::SNS::Subscription'
+    Properties:
+      Endpoint: !Ref FallbackEmail
+      Protocol: email
+      TopicArn: !Ref FallbackTopic
+  SlackExecutionRole:
+      Type: 'AWS::IAM::Role'
+      Properties:
+        AssumeRolePolicyDocument:
+          Version: '2012-10-17'
+          Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+              - lambda.amazonaws.com
+            Action:
+            - sts:AssumeRole
+        Path: "/"
+        Policies:
+        - PolicyName: root
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+            - Effect: Allow
+              Action:
+              - logs:*
+              Resource: arn:aws:logs:*:*:*
+
+  SnsToSlack:
+      Type: 'AWS::Lambda::Function'
+      Properties:
+        Handler: index.lambda_handler
+        Timeout: 25
+        TracingConfig:
+          Mode: PassThrough
+        Role: !Ref SlackExecutionRole
+        Runtime: nodejs8.10
+        Code:
+          ZipFile: !Sub |
+            var https = require('https');
+            var util = require('util');
+
+            exports.handler = function(event, context) {
+                console.log(JSON.stringify(event, null, 2));
+                console.log('From SNS:', event.Records[0].Sns.Message);
+
+                var postData = {
+                    "channel": "scoreboard-sns",
+                    "username": "AWS SNS via Lambda :: Ops",
+                    "text": "*" + event.Records[0].Sns.Subject + "*"
+                };
+
+                var message = event.Records[0].Sns.Message;
+                var severity = "good";
+
+                var dangerMessages = [
+                    " but with errors",
+                    " to RED",
+                    "During an aborted deployment",
+                    "Failed to deploy application",
+                    "Failed to deploy configuration",
+                    "has a dependent object",
+                    "is not authorised to perform",
+                    "Pending to Degraded",
+                    "Stack deletion failed",
+                    "Unsuccessful command execution",
+                    "You do not have permission",
+                    "Your quota allows for 0 more running instance"];
+
+                var warningMessages = [
+                    " aborted operation.",
+                    " to YELLOW",
+                    "Adding instance ",
+                    "Degraded to Info",
+                    "Deleting SNS topic",
+                    "is currently running under desired capacity",
+                    "Ok to Info",
+                    "Ok to Warning",
+                    "Pending Initialization",
+                    "Removed instance ",
+                    "Rollback of environment"
+                    ];
+
+                for(var dangerMessagesItem in dangerMessages) {
+                    if (message.indexOf(dangerMessages[dangerMessagesItem]) != -1) {
+                        severity = "danger";
+                        break;
+                    }
+                }
+
+                // Only check for warning messages if necessary
+                if (severity == "good") {
+                    for(var warningMessagesItem in warningMessages) {
+                        if (message.indexOf(warningMessages[warningMessagesItem]) != -1) {
+                            severity = "warning";
+                            break;
+                        }
+                    }
+                }
+
+                postData.attachments = [
+                    {
+                        "color": severity,
+                        "text": message
+                    }
+                ];
+
+                var options = {
+                    method: 'POST',
+                    hostname: 'hooks.slack.com',
+                    port: 443,
+                    path: '/services/${SlackEndpoint}'
+                };
+
+                var req = https.request(options, function(res) {
+                  res.setEncoding('utf8');
+                  res.on('data', function (chunk) {
+                    context.done(null);
+                  });
+                });
+
+                req.on('error', function(e) {
+                  console.log('problem with request: ' + e.message);
+                });
+
+                req.write(util.format("%j", postData));
+                req.end();
+            };
+
+Outputs:
+  TemplateID:
+    Description: 'template id.'
+    Value: 'operations/alert'
+  TemplateVersion:
+    Description: 'template version.'
+    Value: '__VERSION__'
+  StackName:
+    Description: 'Stack name.'
+    Value: !Sub '${AWS::StackName}'
+  TopicARN:
+    Description: 'The ARN of the alert topic.'
+    Value: !Ref Topic
+    Export:
+      Name: !Sub '${AWS::StackName}-TopicARN'
