@@ -1,0 +1,18 @@
+language: python
+env:
+  global:
+  - AWS_DEFAULT_REGION=eu-west-1
+  - secure: NFv4XuvbHzeXCM8ns9/ikq5cehBlogcHqlIdyXd2QPFZFxF+HwbyS6YO87C8MPm5B/oSWnL9amUwvMthSK8j7LBOW8p4CoOCLyJ7XEbzlpO0+mhBdwkHFdFJ8J0dDhCbO6Yx0vpn994dZSuFDbLym/rFVYcFWjCyFAEu/1lev5Yqz7/Wp60Y82ue038F/IlYJFyof5rmfPQkrPIvI1BISH2vIZxfpOn1jtwKhIlj8zsp5LumiWZCclW3+O4+McmVKyCMTHkTzP2oNgbIaHU5/+ATajFSUVJMzBTkm64h5mzCegONl4Y4vk9FIDlu1bPEjAckryPDCXE+fndpeyR3slWs0MtFNtpseIQHfRBbp9zNAO/Vf+H5HF4NQYRqcJzOWtuqQD5pjpOKDeI2q09L+Gi8FuyoY8407lPyTMaMcWiaQmXs+VDA7tJw2qkHyST2wL5ABesYuzcYQVzDdfgbI68E6ldAcRlxt3hDcWKFxEvpLwvVHATjkSrEIbBwc0z7tn1YGevl1orb7y34vEHKr0jklsXMj3hDNMLlJPeeQjfsPmwtkFaVGFli7T5wWWDx2kmnm7dauXoKhGKS/ChymiW9WtUiIfeZ8wnPXAODO79zg5+KtBe3FsvpJmkbqBWInNk66HmuNHz1aYMgYciaO6IXFO2TFTXcF6N86QeFwEI=
+  - secure: T88V/wsf9XUyYT81NpnsSR9//pb4HitQixKz9qW1wWfSEkEmI/GJHu5M56vzuleI57eYoy2hc1F4jEuxd1lt/n7dOgMAN4g3sQZHSmFK437IT2VP/kQ+CDe3wX+9mXxbWV/Y3EiT+G+rIwCpzLoN8Hq9m8HshcA2PdMfvTEL/DwPKj3uIpi+JEaBgskIJ4UnRoCCpfyo23TDbIrHgC7pGcFDE4UzWBkJ0BdUH5/TS3Vdy9pEzIB0UGzS7nNrMAxJInBnDrjSkivNfYHmd0vwHt3vApoJPjQ/HrdEI2a1/7/EPvBS0G38j8d2Zh+tcfoZZ2C0XeEBmE3xhTIyiXmIGtzQO51JrzIujA+SP+N7ghyzTQPYe1fjFgauxtkP0vWHgH6re2EU9voDkb/wyXGRQHb1lz0H8393XASesHkKY5AT17C1gTgdf4mhURCwwCmok1nXCZzIQoXmPf2Gm2ZVohQNEOdDwak8ZjGSz1bZMVjwh0yZIbudhnmfuyuGj6dsgly3I841VPsjax3noQR/Y/DyOQDE3gskgxpUTBHRKcWmxwSb9uPdBrMPK1XYjJYU6Txs9717JOamnhPvf1OAHrDyWe8VzVrLYyHyB8GAOtwBvQRAYKdmaMuj1W76bOjcgWtSn1Z19v8xYp3z7zoSYw2zBGZnQqjbSnrWjnpapDA=
+python:
+- '2.7'
+install:
+- pip install yamllint
+- pip install awscli
+script:
+- yamllint .
+- sed -i \"s/__VERSION__/$TRAVIS_BUILD_NUMBER/g\" ./*.yaml
+- if [ "$TRAVIS_PULL_REQUEST" = "false" ]; then find . -type f -name '*.y?ml' | while
+  read file; do set -ex && aws s3 cp "$file" "s3://$S3_BUCKET/$TRAVIS_COMMIT/$file"
+  && aws cloudformation validate-template --template-url "https://s3.amazonaws.com/$S3_BUCKET/$TRAVIS_COMMIT/$file"
+  > /dev/null; done; fi
