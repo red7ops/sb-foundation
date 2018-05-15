@@ -271,7 +271,7 @@ Resources:
       MinSize: 1
       Tags:
       - Key: Name
-        Value: 'SSH bastion host/instance'
+        Value: !Sub '${AWS::StackName} host/instance'
         PropagateAtLaunch: true
       NotificationConfigurations: !If
       - HasAlertTopic
@@ -316,7 +316,7 @@ Resources:
 Outputs:
   TemplateID:
     Description: 'Template id.'
-    Value: 'vpc/vpc-ssh-bastion'
+    Value: 'bastion'
   TemplateVersion:
     Description: 'Template version.'
     Value: '__VERSION__'
