@@ -858,6 +858,9 @@ Resources:
                 MAILTO=root
                 HOME=/
                 0 4 * * * root yum update -y --security
+              mode: '000600'
+              owner: root
+              group: root
           commands:
             'a_start_jenkins':
               command: 'service jenkins start'

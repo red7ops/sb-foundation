@@ -227,6 +227,16 @@ Resources:
                 path=Resources.LaunchConfiguration.Metadata.AWS::CloudFormation::Init
                 action=/opt/aws/bin/cfn-init --verbose --stack=${AWS::StackName} --region=${AWS::Region} --resource=LaunchConfiguration
                 runas=root
+            '/etc/cron.d/security-updates':
+              content: !Sub |
+                SHELL=/bin/bash
+                PATH=/sbin:/bin:/usr/sbin:/usr/bin:/opt/aws/bin
+                MAILTO=root
+                HOME=/
+                0 4 * * * root yum update -y --security
+              mode: '000600'
+              owner: root
+              group: root
           services:
             sysvinit:
               cfn-hup:
