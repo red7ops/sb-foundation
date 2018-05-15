@@ -6,11 +6,7 @@ Metadata:
     - Label:
         default: 'Alert Parameters'
       Parameters:
-      - HttpsEndpoint
       - SlackEndpoint
-    - Label:
-        default: 'Fallback Parameters'
-      Parameters:
       - FallbackEmail
     - Label:
         default: 'Config Parameters'
@@ -18,9 +14,6 @@ Metadata:
       - DeliveryFrequency
       - ExternalConfigBucket
 Parameters:
-  HttpsEndpoint:
-    Description: 'HTTPS endpoint that will receive alerts via POST requests'
-    Type: String
   FallbackEmail:
     Description: 'Optional email address that will receive alerts if alerts can not be delivered'
     Type: String
@@ -106,11 +99,11 @@ Resources:
       Dimensions:
       - Name: TopicName
         Value: !GetAtt Topic.TopicName
-  HttpsEndpointSubscription:
+  LambdaEndpointSubscription:
     Type: 'AWS::SNS::Subscription'
     Properties:
-      Endpoint: !Ref HttpsEndpoint
-      Protocol: https
+      Endpoint: !GetAtt SnsToSlack.Arn
+      Protocol: lambda
       TopicArn: !Ref Topic
   FallbackEmailSubscription:
     Condition: HasFallbackEmail
@@ -241,7 +234,6 @@ Resources:
               req.write(util.format("%j", postData));
               req.end();
           };
-
   ConfigBucket:
     Condition: InternalBucket
     DeletionPolicy: Retain
