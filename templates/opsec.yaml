@@ -120,7 +120,7 @@ Resources:
       Timeout: 25
       TracingConfig:
         Mode: PassThrough
-      Role: !Ref SlackExecutionRole
+      Role: !GetAtt SlackExecutionRole.Arn
       Runtime: nodejs6.10
       Code:
         ZipFile: !Sub |
