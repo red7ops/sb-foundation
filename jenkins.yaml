@@ -44,11 +44,11 @@ Metadata:
       - AgentLogsRetentionInDays
 Parameters:
   ParentSSHBastionStack:
-    Description: 'Optional but recommended stack name of parent SSH bastion host/instance stack based on vpc/vpc-ssh-bastion.yaml template.'
+    Description: '(Optional) stack name of parent SSH bastion host/instance stack.'
     Type: String
     Default: ''
   ParentAlertStack:
-    Description: 'Optional but recommended stack name of parent alert stack based on operations/alert.yaml template.'
+    Description: '(Optional) stack name of parent alert stack.'
     Type: String
     Default: ''
   VpcId:

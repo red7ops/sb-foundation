@@ -16,13 +16,19 @@ Metadata:
       - SubDomainName
 Parameters:
   ParentAlertStack:
-    Description: 'Optional but recommended stack name of parent alert stack based on operations/alert.yaml template.'
+    Description: '(Optional) stack name of parent alert stack.'
     Type: String
     Default: ''
   KeyName:
-    Description: 'Optional key pair of the ec2-user to establish a SSH connection to the SSH bastion host/instance.'
+    Description: '(Optional) key pair of the ec2-user to establish a SSH connection to the SSH bastion host/instance.'
     Type: String
     Default: ''
+  VpcId:
+    Description: 'Id of Vpc.'
+    Type: AWS::EC2::VPC::Id
+  PublicSubnets:
+    Description: 'List of public subnets.'
+    Type: List<AWS::EC2::Subnet::Id>
   InstanceType:
     Description: 'Instance type of the SSH bastion host/instance.'
     Type: String
@@ -36,6 +42,15 @@ Parameters:
     Description: 'Name that is used to create the DNS entry ${SubDomainName}.${HostedZoneName}'
     Type: String
     Default: 'bastion'
+  HostedZoneId:
+    Description: 'Id of Route53 hosted zone.'
+    Type: AWS::Route53::HostedZone::Id
+  HostedZoneName:
+    Description: 'Name of Route53 hosted zone.'
+    Type: String
+  InstanceAmi:
+    Description: 'Image for bastion.'
+    Type: AWS::EC2::Image::Id
 Conditions:
   HasKeyName: !Not [!Equals [!Ref KeyName, '']]
   HasAlertTopic: !Not [!Equals [!Ref ParentAlertStack, '']]
