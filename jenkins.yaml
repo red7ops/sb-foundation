@@ -18,6 +18,11 @@ Metadata:
       - KeyName
       - SubDomainName
       - VpcId
+      - PrivateSubnetA
+      - PrivateSubnetB
+      - PublicSubnetA
+      - PublicSubnetB
+      - InstanceAmi
     - Label:
         default: 'Master Parameters'
       Parameters:
@@ -25,10 +30,11 @@ Metadata:
       - MasterAdminPassword
       - MasterLogsRetentionInDays
       - MasterVolumeSize
+      - HostedZoneId
+      - HostedZoneName
     - Label:
         default: 'Agent Parameters'
       Parameters:
-      - AgentSubnetsReach
       - AgentInstanceType
       - AgentVolumeSize
       - AgentMaxSize
@@ -74,13 +80,6 @@ Parameters:
     ConstraintDescription: 'Must be in the range [8-1024]'
     MinValue: 8
     MaxValue: 1024
-  AgentSubnetsReach:
-    Description: 'Should the agents have direct access to the Internet or do you prefer private subnets with NAT?'
-    Type: String
-    Default: Public
-    AllowedValues:
-    - Public
-    - Private
   AgentInstanceType:
     Description: 'The instance type of the Jenkins agents.'
     Type: String
@@ -130,6 +129,27 @@ Parameters:
     Description: 'Name that is used to create the DNS entry ${SubDomainName}.${HostedZoneName}'
     Type: String
     Default: 'jenkins'
+  PrivateSubnetA:
+    Description: 'Private subnet in zone a.'
+    Type: AWS::EC2::Subnet::Id
+  PrivateSubnetB:
+    Description: 'Private subnet in zone b.'
+    Type: AWS::EC2::Subnet::Id
+  PublicSubnetA:
+    Description: 'Public subnet in zone a.'
+    Type: AWS::EC2::Subnet::Id
+  PublicSubnetB:
+    Description: 'Public subnet in zone b.'
+    Type: AWS::EC2::Subnet::Id
+  HostedZoneId:
+    Description: 'Id of Route53 hosted zone.'
+    Type: AWS::Route53::HostedZone::Id
+  HostedZoneName:
+    Description: 'Name of Route53 hosted zone.'
+    Type: String
+  InstanceAmi:
+    Description: 'Image for master and agents.'
+    Type: AWS::EC2::Image::Id
 Conditions:
   HasZeroAgents: !Equals [!Ref AgentDesiredCapacity, '0']
   HasKeyName: !Not [!Equals [!Ref KeyName, '']]
@@ -194,7 +214,7 @@ Resources:
       FileSystemId: !Ref MasterStorage
       SecurityGroups:
       - !Ref MasterStorageSG
-      SubnetId: !Select [ !Ref PrivateSubnets, 0 ]
+      SubnetId: !Ref PrivateSubnetA
 
   MasterStorageMountTargetB:
     Type: 'AWS::EFS::MountTarget'
@@ -202,7 +222,7 @@ Resources:
       FileSystemId: !Ref MasterStorage
       SecurityGroups:
       - !Ref MasterStorageSG
-      SubnetId: !Select [ !Ref PrivateSubnets, 1 ]
+      SubnetId: !Ref PrivateSubnetB
   MasterELBSG:
     Type: 'AWS::EC2::SecurityGroup'
     Properties:
@@ -285,19 +305,13 @@ Resources:
       - Name: LoadBalancer
         Value: !GetAtt MasterELB.LoadBalancerFullName
   RecordSet:
-    Condition: HasZone
     Type: 'AWS::Route53::RecordSet'
     Properties:
       AliasTarget:
         HostedZoneId: !GetAtt 'MasterELB.CanonicalHostedZoneID'
         DNSName: !GetAtt 'MasterELB.DNSName'
-      HostedZoneId:
-        'Fn::ImportValue': !Sub '${ParentZoneStack}-HostedZoneId'
-      Name: !Sub
-      - '${SubDomainName}.${HostedZoneName}'
-      - SubDomainName: !Ref SubDomainName
-        HostedZoneName:
-          'Fn::ImportValue': !Sub '${ParentZoneStack}-HostedZoneName'
+      HostedZoneId: !Ref HostedZoneId
+      Name: !Sub '${SubDomainName}.${HostedZoneName}'
       Type: A
   MasterELB:
     Type: 'AWS::ElasticLoadBalancingV2::LoadBalancer'
@@ -305,7 +319,9 @@ Resources:
       Scheme: internet-facing
       SecurityGroups:
       - !Ref MasterELBSG
-      Subnets: !Ref PublicSubnets
+      Subnets:
+      - !Ref PublicSubnetA
+      - !Ref PublicSubnetB
       Tags:
       - Key: Name
         Value: !Sub '${AWS::StackName}-master'
@@ -406,27 +422,6 @@ Resources:
             - 'sts:AssumeRole'
             Resource:
             - '*'
-  MasterIAMPolicySSHAccess:
-    Type: 'AWS::IAM::Policy'
-    Condition: HasIAMUserSSHAccess
-    Properties:
-      Roles:
-      - !Ref MasterIAMRole
-      PolicyName: iam
-      PolicyDocument:
-        Version: '2012-10-17'
-        Statement:
-        - Effect: Allow
-          Action:
-          - 'iam:ListUsers'
-          Resource:
-          - '*'
-        - Effect: Allow
-          Action:
-          - 'iam:ListSSHPublicKeys'
-          - 'iam:GetSSHPublicKey'
-          Resource:
-          - !Sub 'arn:aws:iam::${AWS::AccountId}:user/*'
   MasterSG:
     Type: 'AWS::EC2::SecurityGroup'
     Properties:
@@ -473,7 +468,13 @@ Resources:
     Metadata:
       AWS::CloudFormation::Init:
         configSets:
-          default: !If [HasIAMUserSSHAccess, [awslogs, ssh-access, mount, install, setup, custom, run], [awslogs, mount, install, setup, custom, run]]
+          default:
+          - awslogs
+          - mount
+          - install
+          - setup
+          - custom
+          - run
         awslogs:
           packages:
             yum:
@@ -555,70 +556,6 @@ Resources:
                 files:
                 - '/etc/awslogs/awslogs.conf'
                 - '/etc/awslogs/awscli.conf'
-        ssh-access:
-          files:
-            '/opt/authorized_keys_command.sh':
-              content: |
-                #!/bin/bash -e
-                if [ -z "$1" ]; then
-                  exit 1
-                fi
-                UnsaveUserName="$1"
-                UnsaveUserName=${UnsaveUserName//".plus."/"+"}
-                UnsaveUserName=${UnsaveUserName//".equal."/"="}
-                UnsaveUserName=${UnsaveUserName//".comma."/","}
-                UnsaveUserName=${UnsaveUserName//".at."/"@"}
-                aws iam list-ssh-public-keys --user-name "$UnsaveUserName" --query "SSHPublicKeys[?Status == 'Active'].[SSHPublicKeyId]" --output text | while read -r KeyId; do
-                  aws iam get-ssh-public-key --user-name "$UnsaveUserName" --ssh-public-key-id "$KeyId" --encoding SSH --query "SSHPublicKey.SSHPublicKeyBody" --output text
-                done
-              mode: '000755'
-              owner: root
-              group: root
-            '/opt/import_users.sh':
-              content: |
-                #!/bin/bash -e
-                aws iam list-users --query "Users[].[UserName]" --output text | while read User; do
-                  SaveUserName="$User"
-                  SaveUserName=${SaveUserName//"+"/".plus."}
-                  SaveUserName=${SaveUserName//"="/".equal."}
-                  SaveUserName=${SaveUserName//","/".comma."}
-                  SaveUserName=${SaveUserName//"@"/".at."}
-                  if [ "${#SaveUserName}" -le "32" ]; then
-                    if ! id -u "$SaveUserName" >/dev/null 2>&1; then
-                      #sudo will read each file in /etc/sudoers.d, skipping file names that end in ‘~’ or contain a ‘.’ character to avoid causing problems with package manager or editor temporary/backup files.
-                      SaveUserFileName=$(echo "$SaveUserName" | tr "." " ")
-                      /usr/sbin/useradd "$SaveUserName"
-                      echo "$SaveUserName ALL=(ALL) NOPASSWD:ALL" > "/etc/sudoers.d/$SaveUserFileName"
-                    fi
-                  else
-                    echo "Can not import IAM user ${SaveUserName}. User name is longer than 32 characters."
-                  fi
-                done
-              mode: '000755'
-              owner: root
-              group: root
-            '/etc/cron.d/import_users':
-              content: |
-                */10 * * * * root /opt/import_users.sh
-              mode: '000644'
-              owner: root
-              group: root
-          commands:
-            'a_configure_sshd_command':
-              command: 'sed -i "s:#AuthorizedKeysCommand none:AuthorizedKeysCommand /opt/authorized_keys_command.sh:g" /etc/ssh/sshd_config'
-            'b_configure_sshd_commanduser':
-              command: 'sed -i "s:#AuthorizedKeysCommandUser nobody:AuthorizedKeysCommandUser nobody:g" /etc/ssh/sshd_config'
-            'c_import_users':
-              command: './import_users.sh'
-              cwd: '/opt'
-          services:
-            sysvinit:
-              sshd:
-                enabled: true
-                ensureRunning: true
-                commands:
-                - 'a_configure_sshd_command'
-                - 'b_configure_sshd_commanduser'
         mount:
           packages:
             yum:
@@ -633,7 +570,7 @@ Resources:
               command: 'groupadd -g 497 jenkins'
               test: 'if grep -q jenkins: /etc/group; then exit 1; else exit 0; fi'
             'b_useradd':
-              command: 'adduser -u 498 -g 497 -s /bin/false -d /var/lib/jenkins -c ''Jenkins Continuous Integration Server'' jenkins'
+              command: 'adduser -u 498 -g 497 -s /bin/false -d /var/lib/jenkins -c ''Jenkins Continuous Delivery Server'' jenkins'
               test: 'if grep -q jenkins: /etc/passwd; then exit 1; else exit 0; fi'
             'c_mountpoint_mkdir':
               command: 'mkdir /var/lib/jenkins && chown -R jenkins:jenkins /var/lib/jenkins'
@@ -980,7 +917,7 @@ Resources:
                   rpm:
                   - jenkins
     Properties:
-      ImageId: !FindInMap [RegionMap, !Ref 'AWS::Region', AMI]
+      ImageId: !Ref InstanceAmi
       IamInstanceProfile: !Ref MasterIP
       InstanceType: !Ref MasterInstanceType
       SecurityGroups:
@@ -1016,7 +953,9 @@ Resources:
           TopicARN:
             'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'
       - !Ref 'AWS::NoValue'
-      VPCZoneIdentifier: !Ref PrivateSubnets
+      VPCZoneIdentifier:
+      - !Ref PrivateSubnetA
+      - !Ref PrivateSubnetB
       TargetGroupARNs:
       - !Ref MasterELBTargetGroup
       Tags:
@@ -1210,27 +1149,6 @@ Resources:
             - 'sts:AssumeRole'
             Resource:
             - '*'
-  AgentIAMPolicySSHAccess:
-    Type: 'AWS::IAM::Policy'
-    Condition: HasIAMUserSSHAccess
-    Properties:
-      Roles:
-      - !Ref AgentIAMRole
-      PolicyName: iam
-      PolicyDocument:
-        Version: '2012-10-17'
-        Statement:
-        - Effect: Allow
-          Action:
-          - 'iam:ListUsers'
-          Resource:
-          - '*'
-        - Effect: Allow
-          Action:
-          - 'iam:ListSSHPublicKeys'
-          - 'iam:GetSSHPublicKey'
-          Resource:
-          - !Sub 'arn:aws:iam::${AWS::AccountId}:user/*'
   AgentSG:
     Type: 'AWS::EC2::SecurityGroup'
     Properties:
@@ -1269,7 +1187,12 @@ Resources:
     Metadata:
       AWS::CloudFormation::Init:
         configSets:
-          default: !If [HasIAMUserSSHAccess, [awslogs, ssh-access, install, setup, custom, run], [awslogs, install, setup, custom, run]]
+          default:
+          - awslogs
+          - install
+          - setup
+          - custom
+          - run
         awslogs:
           packages:
             yum:
@@ -1349,70 +1272,6 @@ Resources:
                 files:
                 - '/etc/awslogs/awslogs.conf'
                 - '/etc/awslogs/awscli.conf'
-        ssh-access:
-          files:
-            '/opt/authorized_keys_command.sh':
-              content: |
-                #!/bin/bash -e
-                if [ -z "$1" ]; then
-                  exit 1
-                fi
-                UnsaveUserName="$1"
-                UnsaveUserName=${UnsaveUserName//".plus."/"+"}
-                UnsaveUserName=${UnsaveUserName//".equal."/"="}
-                UnsaveUserName=${UnsaveUserName//".comma."/","}
-                UnsaveUserName=${UnsaveUserName//".at."/"@"}
-                aws iam list-ssh-public-keys --user-name "$UnsaveUserName" --query "SSHPublicKeys[?Status == 'Active'].[SSHPublicKeyId]" --output text | while read -r KeyId; do
-                  aws iam get-ssh-public-key --user-name "$UnsaveUserName" --ssh-public-key-id "$KeyId" --encoding SSH --query "SSHPublicKey.SSHPublicKeyBody" --output text
-                done
-              mode: '000755'
-              owner: root
-              group: root
-            '/opt/import_users.sh':
-              content: |
-                #!/bin/bash -e
-                aws iam list-users --query "Users[].[UserName]" --output text | while read User; do
-                  SaveUserName="$User"
-                  SaveUserName=${SaveUserName//"+"/".plus."}
-                  SaveUserName=${SaveUserName//"="/".equal."}
-                  SaveUserName=${SaveUserName//","/".comma."}
-                  SaveUserName=${SaveUserName//"@"/".at."}
-                  if [ "${#SaveUserName}" -le "32" ]; then
-                    if ! id -u "$SaveUserName" >/dev/null 2>&1; then
-                      #sudo will read each file in /etc/sudoers.d, skipping file names that end in ‘~’ or contain a ‘.’ character to avoid causing problems with package manager or editor temporary/backup files.
-                      SaveUserFileName=$(echo "$SaveUserName" | tr "." " ")
-                      /usr/sbin/useradd "$SaveUserName"
-                      echo "$SaveUserName ALL=(ALL) NOPASSWD:ALL" > "/etc/sudoers.d/$SaveUserFileName"
-                    fi
-                  else
-                    echo "Can not import IAM user ${SaveUserName}. User name is longer than 32 characters."
-                  fi
-                done
-              mode: '000755'
-              owner: root
-              group: root
-            '/etc/cron.d/import_users':
-              content: |
-                */10 * * * * root /opt/import_users.sh
-              mode: '000644'
-              owner: root
-              group: root
-          commands:
-            'a_configure_sshd_command':
-              command: 'sed -i "s:#AuthorizedKeysCommand none:AuthorizedKeysCommand /opt/authorized_keys_command.sh:g" /etc/ssh/sshd_config'
-            'b_configure_sshd_commanduser':
-              command: 'sed -i "s:#AuthorizedKeysCommandUser nobody:AuthorizedKeysCommandUser nobody:g" /etc/ssh/sshd_config'
-            'c_import_users':
-              command: './import_users.sh'
-              cwd: '/opt'
-          services:
-            sysvinit:
-              sshd:
-                enabled: true
-                ensureRunning: true
-                commands:
-                - 'a_configure_sshd_command'
-                - 'b_configure_sshd_commanduser'
         install:
           packages:
             yum:
@@ -1441,7 +1300,7 @@ Resources:
               command: 'groupadd -g 497 jenkins'
               test: 'if grep -q jenkins: /etc/group; then exit 1; else exit 0; fi'
             'c_useradd':
-              command: 'adduser -u 498 -g 497 -s /bin/bash -d /var/lib/jenkins -c "Jenkins Continuous Integration Server" jenkins'
+              command: 'adduser -u 498 -g 497 -s /bin/bash -d /var/lib/jenkins -c "Jenkins Continuous Delivery Server" jenkins'
               test: 'if grep -q jenkins: /etc/passwd; then exit 1; else exit 0; fi'
             'd_mkdir':
               command: 'mkdir /var/lib/jenkins && chown -R jenkins:jenkins /var/lib/jenkins'
@@ -1661,7 +1520,7 @@ Resources:
                 - '/opt/agent-healthcheck/daemon.rb'
                 - '/opt/agent-healthcheck/server.rb'
     Properties:
-      ImageId: !FindInMap [RegionMap, !Ref 'AWS::Region', AMI]
+      ImageId: !Ref InstanceAmi
       IamInstanceProfile: !Ref AgentIP
       InstanceType: !Ref AgentInstanceType
       SecurityGroups:
@@ -1697,7 +1556,9 @@ Resources:
           TopicARN:
             'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'
       - !Ref 'AWS::NoValue'
-      VPCZoneIdentifier: !Ref PrivateSubnets
+      VPCZoneIdentifier:
+      - !Ref PrivateSubnetA
+      - !Ref PrivateSubnetB
       Tags:
       - Key: Name
         Value: 'jenkins-agent'
@@ -1878,12 +1739,12 @@ Outputs:
     Export:
       Name: !Sub '${AWS::StackName}-URL'
   MasterIAMRole:
-    Description: 'Use this IAm Role to reference API calls from the Jenkins master'
+    Description: 'Use this IAM Role to reference API calls from the Jenkins master'
     Value: !GetAtt 'MasterIAMRole.Arn'
     Export:
       Name: !Sub '${AWS::StackName}-MasterIAMRole'
   AgentIAMRole:
-    Description: 'Use this IAm Role to reference API calls from the Jenkins agents'
+    Description: 'Use this IAM Role to reference API calls from the Jenkins agents'
     Value: !GetAtt 'AgentIAMRole.Arn'
     Export:
       Name: !Sub '${AWS::StackName}-AgentIAMRole'
