@@ -1,5 +1,5 @@
 AWSTemplateFormatVersion: '2010-09-09'
-Description: 'Operations and Security: Alert and Config'
+Description: 'Operations and Security: Alerts'
 Metadata:
   'AWS::CloudFormation::Interface':
     ParameterGroups:
@@ -8,11 +8,6 @@ Metadata:
       Parameters:
       - SlackEndpoint
       - FallbackEmail
-    - Label:
-        default: 'Config Parameters'
-      Parameters:
-      - DeliveryFrequency
-      - ExternalConfigBucket
 Parameters:
   FallbackEmail:
     Description: 'Optional email address that will receive alerts if alerts can not be delivered'
@@ -21,24 +16,8 @@ Parameters:
   SlackEndpoint:
     Description: 'Custom endpoint for slack notifications.'
     Type: String
-  DeliveryFrequency:
-    Description: 'The frequency with which AWS Config delivers configuration snapshots'
-    Type: String
-    Default: Six_Hours
-    AllowedValues:
-    - One_Hour
-    - Three_Hours
-    - Six_Hours
-    - Twelve_Hours
-    - TwentyFour_Hours
-  ExternalConfigBucket:
-    Description: '(Optional) The name of an S3 bucket where you want to store configuration history for the delivery channel. If you leave this empty, the Amazon S3 bucket is created for you.'
-    Type: String
-    Default: ''
 Conditions:
   HasFallbackEmail: !Not [!Equals [!Ref FallbackEmail, '']]
-  InternalBucket: !Equals [!Ref ExternalConfigBucket, '']
-  ExternalBucket: !Not [!Equals [!Ref ExternalConfigBucket, '']]
 Resources:
   Topic:
     Type: 'AWS::SNS::Topic'
@@ -234,77 +213,6 @@ Resources:
               req.write(util.format("%j", postData));
               req.end();
           };
-  ConfigBucket:
-    Condition: InternalBucket
-    DeletionPolicy: Retain
-    Type: 'AWS::S3::Bucket'
-    Properties: {}
-  ConfigTopic:
-    Type: 'AWS::SNS::Topic'
-    Properties: {}
-  DeliveryChannel:
-    Type: 'AWS::Config::DeliveryChannel'
-    Properties:
-      ConfigSnapshotDeliveryProperties:
-        DeliveryFrequency: !Ref DeliveryFrequency
-      S3BucketName: !If [InternalBucket, !Ref ConfigBucket, !Ref ExternalConfigBucket]
-      SnsTopicARN: !Ref ConfigTopic
-  ConfigurationRecorderRole:
-    Condition: InternalBucket
-    Type: 'AWS::IAM::Role'
-    Properties:
-      ManagedPolicyArns:
-      - 'arn:aws:iam::aws:policy/service-role/AWSConfigRole'
-      AssumeRolePolicyDocument:
-        Version: '2012-10-17'
-        Statement:
-        - Sid: AssumeRole1
-          Effect: Allow
-          Principal:
-            Service: 'config.amazonaws.com'
-          Action: 'sts:AssumeRole'
-      Policies:
-      - PolicyName: 's3-policy'
-        PolicyDocument:
-          Version: '2012-10-17'
-          Statement:
-          - Effect: Allow
-            Action: 's3:PutObject'
-            Resource: !Sub 'arn:aws:s3:::${ConfigBucket}/*'
-            Condition:
-              StringLike:
-                's3:x-amz-acl': 'bucket-owner-full-control'
-          - Effect: Allow
-            Action: 's3:GetBucketAcl'
-            Resource: !Sub 'arn:aws:s3:::${ConfigBucket}'
-      - PolicyName: 'sns-policy'
-        PolicyDocument:
-          Version: '2012-10-17'
-          Statement:
-          - Effect: Allow
-            Action: 'sns:Publish'
-            Resource: !Ref ConfigTopic
-  ExternalConfigurationRecorderRole:
-    Condition: ExternalBucket
-    Type: 'AWS::IAM::Role'
-    Properties:
-      ManagedPolicyArns:
-      - 'arn:aws:iam::aws:policy/service-role/AWSConfigRole'
-      AssumeRolePolicyDocument:
-        Version: '2012-10-17'
-        Statement:
-        - Sid: AssumeRole1
-          Effect: Allow
-          Principal:
-            Service: 'config.amazonaws.com'
-          Action: 'sts:AssumeRole'
-  ConfigurationRecorder:
-    Type: 'AWS::Config::ConfigurationRecorder'
-    Properties:
-      RecordingGroup:
-        AllSupported: true
-        IncludeGlobalResourceTypes: true
-      RoleARN: !If [InternalBucket, !GetAtt 'ConfigurationRecorderRole.Arn', !GetAtt 'ExternalConfigurationRecorderRole.Arn']
 Outputs:
   TemplateID:
     Description: 'template id.'
