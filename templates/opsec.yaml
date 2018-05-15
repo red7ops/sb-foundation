@@ -213,6 +213,13 @@ Resources:
               req.write(util.format("%j", postData));
               req.end();
           };
+  LambdaInvokePermission:
+    Type: 'AWS::Lambda::Permission'
+    Properties:
+      Action: lambda:InvokeFunction
+      Principal: sns.amazonaws.com
+      SourceArn: !Ref Topic
+      FunctionName: !GetAtt SnsToSlack.Arn
 Outputs:
   TemplateID:
     Description: 'template id.'
