@@ -121,7 +121,7 @@ Resources:
       TracingConfig:
         Mode: PassThrough
       Role: !Ref SlackExecutionRole
-      Runtime: nodejs8.10
+      Runtime: nodejs6.10
       Code:
         ZipFile: !Sub |
           var https = require('https');
