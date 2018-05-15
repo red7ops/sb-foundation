@@ -851,6 +851,13 @@ Resources:
               mode: '000600'
               owner: root
               group: root
+            '/etc/cron.d/security-updates':
+              content: !Sub |
+                SHELL=/bin/bash
+                PATH=/sbin:/bin:/usr/sbin:/usr/bin:/opt/aws/bin
+                MAILTO=root
+                HOME=/
+                0 4 * * * root yum update -y --security
           commands:
             'a_start_jenkins':
               command: 'service jenkins start'
@@ -889,7 +896,7 @@ Resources:
               command: 'service jenkins stop'
               test: '[ ! -f /var/lib/jenkins/setup_done.txt ]'
             'z_create_setup_done_file':
-              command: 'echo "Setup done. Don not delete this file." > /var/lib/jenkins/setup_done.txt'
+              command: 'echo "Setup done. Do not delete this file!" > /var/lib/jenkins/setup_done.txt'
               test: '[ ! -f /var/lib/jenkins/setup_done.txt ]'
         custom:
           packages:

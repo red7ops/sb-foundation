@@ -262,7 +262,6 @@ Resources:
       Tags:
       - Key: Name
         Value: 'SSH bastion host/instance'
-
         PropagateAtLaunch: true
       NotificationConfigurations: !If
       - HasAlertTopic
