@@ -277,7 +277,7 @@ Resources:
             - "codecommit:GitPull"
             - "codecommit:UploadArchive"
             Resource:
-             - !Sub 'arn:aws:codecommit:${AWS::Region}:${AWS::AccountId}:sb-*'
+            - !Sub 'arn:aws:codecommit:${AWS::Region}:${AWS::AccountId}:sb-*'
           -
             Effect: "Allow"
             Action:
@@ -332,49 +332,49 @@ Resources:
           -
             Effect: "Allow"
             Action:
-              - "ec2:Describe*"
-              - "cloudformation:ValidateTemplate"
-              - "elasticloadbalancing:Describe*"
-              - "autoscaling:Describe*"
-              - "iam:Get*"
-              - "iam:List*"
-              - "logs:Describe*"
-              - "logs:Get*"
-              - "tag:Get*"
-              - "ssm:GetParameters"
-              - "ecr:GetAuthorizationToken"
-              - "ecr:BatchCheckLayerAvailability"
-              - "ecr:GetDownloadUrlForLayer"
-              - "ecr:GetRepositoryPolicy"
-              - "ecr:DescribeRepositories"
-              - "ecr:ListImages"
-              - "ecr:DescribeImages"
-              - "ecr:BatchGetImage"
-              - "ecr:InitiateLayerUpload"
-              - "ecr:UploadLayerPart"
-              - "ecr:CompleteLayerUpload"
-              - "ecr:PutImage"
+            - "ec2:Describe*"
+            - "cloudformation:ValidateTemplate"
+            - "elasticloadbalancing:Describe*"
+            - "autoscaling:Describe*"
+            - "iam:Get*"
+            - "iam:List*"
+            - "logs:Describe*"
+            - "logs:Get*"
+            - "tag:Get*"
+            - "ssm:GetParameters"
+            - "ecr:GetAuthorizationToken"
+            - "ecr:BatchCheckLayerAvailability"
+            - "ecr:GetDownloadUrlForLayer"
+            - "ecr:GetRepositoryPolicy"
+            - "ecr:DescribeRepositories"
+            - "ecr:ListImages"
+            - "ecr:DescribeImages"
+            - "ecr:BatchGetImage"
+            - "ecr:InitiateLayerUpload"
+            - "ecr:UploadLayerPart"
+            - "ecr:CompleteLayerUpload"
+            - "ecr:PutImage"
             Resource:
-              - "*"
+            - "*"
           -
             Effect: "Allow"
             Action:
-              - "logs:CreateLogGroup"
-              - "logs:CreateLogStream"
-              - "logs:PutLogEvents"
+            - "logs:CreateLogGroup"
+            - "logs:CreateLogStream"
+            - "logs:PutLogEvents"
             Resource:
-              - !Sub 'arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/codebuild/*'
+            - !Sub 'arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/codebuild/*'
           -
             Effect: "Allow"
             Action:
-              - "s3:PutObject"
-              - "s3:GetObject"
-              - "s3:GetObjectVersion"
-              - "s3:ListBucket"
+            - "s3:PutObject"
+            - "s3:GetObject"
+            - "s3:GetObjectVersion"
+            - "s3:ListBucket"
             Resource:
-              - !Sub 'arn:aws:s3:::codepipeline-${AWS::Region}-*'
-              - !Sub 'arn:aws:s3:::${ArtifactStoreS3}/*'
-              - !Sub 'arn:aws:s3:::${ArtifactStoreS3}'
+            - !Sub 'arn:aws:s3:::codepipeline-${AWS::Region}-*'
+            - !Sub 'arn:aws:s3:::${ArtifactStoreS3}/*'
+            - !Sub 'arn:aws:s3:::${ArtifactStoreS3}'
 Outputs:
   TemplateID:
     Description: 'template id.'
