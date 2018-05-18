@@ -11,7 +11,7 @@ Metadata:
     - Label:
         default: 'IAM Parameters'
       Parameters:
-      - ArtifactStore
+      - ArtifactStoreS3
 Parameters:
   FallbackEmail:
     Description: 'Optional email address that will receive alerts if alerts can not be delivered'
@@ -20,7 +20,7 @@ Parameters:
   SlackEndpoint:
     Description: 'Custom endpoint for slack notifications.'
     Type: String
-  ArtifactStore:
+  ArtifactStoreS3:
     Description: 'Name of artifact bucket'
     Type: String
 Conditions:
