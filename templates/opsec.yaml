@@ -8,6 +8,10 @@ Metadata:
       Parameters:
       - SlackEndpoint
       - FallbackEmail
+    - Label:
+        default: 'IAM Parameters'
+      Parameters:
+      - ArtifactStore
 Parameters:
   FallbackEmail:
     Description: 'Optional email address that will receive alerts if alerts can not be delivered'
