@@ -16,6 +16,9 @@ Parameters:
   SlackEndpoint:
     Description: 'Custom endpoint for slack notifications.'
     Type: String
+  ArtifactStore:
+    Description: 'Name of artifact bucket'
+    Type: String
 Conditions:
   HasFallbackEmail: !Not [!Equals [!Ref FallbackEmail, '']]
 Resources:
