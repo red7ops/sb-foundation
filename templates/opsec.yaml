@@ -278,6 +278,7 @@ Resources:
             - "codecommit:UploadArchive"
             Resource:
             - !Sub 'arn:aws:codecommit:${AWS::Region}:${AWS::AccountId}:sb-*'
+            - !Sub 'arn:aws:codecommit:${AWS::Region}:${AWS::AccountId}:sb2-*'
           -
             Effect: "Allow"
             Action:
