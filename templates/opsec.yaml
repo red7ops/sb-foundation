@@ -150,6 +150,7 @@ Resources:
               var dangerMessages = [
                   " but with errors",
                   " to RED",
+                  " FAILED",
                   "During an aborted deployment",
                   "Failed to deploy application",
                   "Failed to deploy configuration",
@@ -164,6 +165,7 @@ Resources:
               var warningMessages = [
                   " aborted operation.",
                   " to YELLOW",
+                  " CANCELED",
                   "Adding instance ",
                   "Degraded to Info",
                   "Deleting SNS topic",
