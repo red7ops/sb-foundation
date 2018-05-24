@@ -156,6 +156,8 @@ Resources:
                 message = "Pipeline has finished with state: " + message.state;
               }
 
+              console.log(type);
+
               var postData = {
                   "channel": channel,
                   "username": "AWS SNS via Lambda :: Ops",
