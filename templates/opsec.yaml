@@ -138,14 +138,29 @@ Resources:
               console.log(JSON.stringify(event, null, 2));
               console.log('From SNS:', event.Records[0].Sns.Message);
 
-              var postData = {
-                  "channel": "scoreboard-sns",
-                  "username": "AWS SNS via Lambda :: Ops",
-                  "text": "*" + event.Records[0].Sns.Subject + "*"
-              };
-
               var message = event.Records[0].Sns.Message;
+              var subject = event.Records[0].Sns.Subject;
+              var channel = "scoreboard-sns";
               var severity = "good";
+              var type = "unknown";
+
+              if( message.hasOwnProperty("AlarmName") ) {
+                type = "alarm";
+                channel = "alarms";
+                message = message.AlarmDescription;
+              }
+              else if( message.hasOwnProperty("source") && message.source == "aws.codepipeline" ) {
+                type = "pipeline";
+                channel = "pipelines";
+                subject = "PIPELINE: " + message.pipeline;
+                message = "Pipeline has finished with state: " + message.state;
+              }
+
+              var postData = {
+                  "channel": channel,
+                  "username": "AWS SNS via Lambda :: Ops",
+                  "text": "*" + subject + "*"
+              };
 
               var dangerMessages = [
                   " but with errors",
