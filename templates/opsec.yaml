@@ -140,20 +140,21 @@ Resources:
 
               var message = event.Records[0].Sns.Message;
               var subject = event.Records[0].Sns.Subject;
+              var msgObj = JSON.parse(message);
               var channel = "scoreboard-sns";
               var severity = "good";
               var type = "unknown";
 
-              if( message.hasOwnProperty("AlarmName") ) {
+              if( msgObj.hasOwnProperty("AlarmName") ) {
                 type = "alarm";
                 channel = "alarms";
-                message = message.AlarmDescription;
+                message = msgObj.AlarmDescription;
               }
-              else if( message.hasOwnProperty("source") && message.source == "aws.codepipeline" ) {
+              else if( msgObj.hasOwnProperty("source") && msgObj.source == "aws.codepipeline" ) {
                 type = "pipeline";
                 channel = "pipelines";
-                subject = "PIPELINE: " + message.pipeline;
-                message = "Pipeline has finished with state: " + message.state;
+                subject = "PIPELINE: " + msgObj.pipeline;
+                message = "Pipeline has finished with state: " + msgObj.state;
               }
 
               console.log(type);
