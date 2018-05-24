@@ -153,8 +153,8 @@ Resources:
               else if( msgObj.hasOwnProperty("source") && msgObj.source == "aws.codepipeline" ) {
                 type = "pipeline";
                 channel = "pipelines";
-                subject = "PIPELINE: " + msgObj.pipeline;
-                message = "Pipeline has finished with state: " + msgObj.state;
+                subject = "PIPELINE: " + msgObj.detail.pipeline;
+                message = "Pipeline has finished with state: " + msgObj.detail.state;
               }
 
               console.log(type);
