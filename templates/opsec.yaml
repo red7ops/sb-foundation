@@ -295,15 +295,15 @@ Resources:
             - "cloudformation:ValidateTemplate"
             - "cloudformation:ExecuteChangeSet"
             Resource:
-            - !Sub 'arn:aws:cloudformation:${AWS::Region}:${AWS::AccountId}:stack/${AWS::StackName}-*'
+            - !Sub 'arn:aws:cloudformation:${AWS::Region}:${AWS::AccountId}:stack/SB-*'
           -
             Effect: "Allow"
             Action:
             - "codebuild:StartBuild"
             - "codebuild:BatchGetBuilds"
             Resource:
-            - !Sub 'arn:aws:codebuild:${AWS::Region}:${AWS::AccountId}:project/${AWS::StackName}-*'
-            - !Sub 'arn:aws:codebuild:${AWS::Region}:${AWS::AccountId}:build/${AWS::StackName}-*:*'
+            - !Sub 'arn:aws:codebuild:${AWS::Region}:${AWS::AccountId}:project/SB-*'
+            - !Sub 'arn:aws:codebuild:${AWS::Region}:${AWS::AccountId}:build/SB-*:*'
           -
             Effect: "Allow"
             Action:
