@@ -143,21 +143,18 @@ Resources:
               var msgObj = JSON.parse(message);
               var channel = "scoreboard-sns";
               var severity = "good";
-              var type = "unknown";
 
               if( msgObj.hasOwnProperty("AlarmName") ) {
-                type = "alarm";
                 channel = "alarms";
                 message = msgObj.AlarmDescription;
               }
               else if( msgObj.hasOwnProperty("source") && msgObj.source == "aws.codepipeline" ) {
-                type = "pipeline";
                 channel = "pipelines";
                 subject = "PIPELINE: " + msgObj.detail.pipeline;
                 message = "Pipeline has finished with state: " + msgObj.detail.state;
               }
 
-              console.log(type);
+              console.log(msgObj.detail);
 
               var postData = {
                   "channel": channel,
