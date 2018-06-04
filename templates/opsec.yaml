@@ -154,8 +154,6 @@ Resources:
                 message = "Pipeline has finished with state: " + msgObj.detail.state;
               }
 
-              console.log(msgObj.detail);
-
               var postData = {
                   "channel": channel,
                   "username": "AWS SNS via Lambda :: Ops",
@@ -170,7 +168,7 @@ Resources:
                   "Failed to deploy application",
                   "Failed to deploy configuration",
                   "has a dependent object",
-                  "is not authorised to perform",
+                  "is not authorized to perform",
                   "Pending to Degraded",
                   "Stack deletion failed",
                   "Unsuccessful command execution",
@@ -393,6 +391,13 @@ Resources:
             - !Sub 'arn:aws:s3:::codepipeline-${AWS::Region}-*'
             - !Sub 'arn:aws:s3:::${ArtifactStoreS3}/*'
             - !Sub 'arn:aws:s3:::${ArtifactStoreS3}'
+          -
+            Effect: "Allow"
+            Action:
+            - "codecommit:GitPush"
+            Resource:
+            - !Sub 'arn:aws:codecommit:${AWS::Region}:${AWS::AccountId}:sb-*'
+            - !Sub 'arn:aws:codecommit:${AWS::Region}:${AWS::AccountId}:sb2-*'
 Outputs:
   TemplateID:
     Description: 'template id.'
