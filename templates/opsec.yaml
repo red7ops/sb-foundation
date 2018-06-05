@@ -394,6 +394,7 @@ Resources:
           -
             Effect: "Allow"
             Action:
+            - "codecommit:GitPull"
             - "codecommit:GitPush"
             Resource:
             - !Sub 'arn:aws:codecommit:${AWS::Region}:${AWS::AccountId}:sb-*'
