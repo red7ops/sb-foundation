@@ -394,14 +394,17 @@ Resources:
           -
             Effect: "Allow"
             Action:
-            - "codecommit:GitPull"
-            - "codecommit:GitPush"
-            - "codecommit:ListBranches"
-            - "codecommit:ListRepositories"
-            - "codecommit:BatchGetRepositories"
-            - "codecommit:ListRepositories"
-            - "codecommit:Get*"
-            - "codecommit:UploadArchive"
+              - "codecommit:BatchGet*"
+              - "codecommit:Get*"
+              - "codecommit:List*"
+              - "codecommit:Describe*"
+              - "codecommit:Put*"
+              - "codecommit:Post*"
+              - "codecommit:Merge*"
+              - "codecommit:Test*"
+              - "codecommit:Update*"
+              - "codecommit:GitPull"
+              - "codecommit:GitPush"
             Resource:
             - !Sub 'arn:aws:codecommit:${AWS::Region}:${AWS::AccountId}:sb-*'
             - !Sub 'arn:aws:codecommit:${AWS::Region}:${AWS::AccountId}:sb2-*'
