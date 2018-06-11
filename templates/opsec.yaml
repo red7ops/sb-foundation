@@ -399,6 +399,7 @@ Resources:
             - "codecommit:ListBranches"
             - "codecommit:ListRepositories"
             - "codecommit:BatchGetRepositories"
+            - "codecommit:ListRepositories"
             - "codecommit:Get*"
             - "codecommit:UploadArchive"
             Resource:
