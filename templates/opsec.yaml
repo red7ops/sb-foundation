@@ -394,20 +394,60 @@ Resources:
           -
             Effect: "Allow"
             Action:
-              - "codecommit:BatchGet*"
-              - "codecommit:Get*"
-              - "codecommit:List*"
-              - "codecommit:Describe*"
-              - "codecommit:Put*"
-              - "codecommit:Post*"
-              - "codecommit:Merge*"
-              - "codecommit:Test*"
-              - "codecommit:Update*"
-              - "codecommit:GitPull"
-              - "codecommit:GitPush"
+            - "codecommit:BatchGet*"
+            - "codecommit:Get*"
+            - "codecommit:List*"
+            - "codecommit:Describe*"
+            - "codecommit:Put*"
+            - "codecommit:Post*"
+            - "codecommit:Merge*"
+            - "codecommit:Test*"
+            - "codecommit:Update*"
+            - "codecommit:GitPull"
+            - "codecommit:GitPush"
             Resource:
             - !Sub 'arn:aws:codecommit:${AWS::Region}:${AWS::AccountId}:sb-*'
             - !Sub 'arn:aws:codecommit:${AWS::Region}:${AWS::AccountId}:sb2-*'
+
+  ECSRole:
+    Type: 'AWS::IAM::Role'
+    Properties:
+      RoleName: !Sub '${AWS::StackName}-ECSRole'
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+        -
+          Effect: "Allow"
+          Principal:
+            Service:
+            - "ecs.amazonaws.com"
+          Action:
+          - "sts:AssumeRole"
+      Path: /
+      Policies:
+      -
+        PolicyName: "ECSAccessPolicy"
+        PolicyDocument:
+          Version: "2012-10-17"
+          Statement:
+          -
+            Effect: "Allow"
+            Action:
+            - "ec2:AuthorizeSecurityGroupIngress"
+            - "ec2:Describe*"
+            - "elasticloadbalancing:DeregisterInstancesFromLoadBalancer"
+            - "elasticloadbalancing:Describe*"
+            - "elasticloadbalancing:RegisterInstancesWithLoadBalancer"
+            - "elasticloadbalancing:DeregisterTargets"
+            - "elasticloadbalancing:RegisterTargets"
+            - "ecs:RegisterTaskDefinition"
+            - "ecs:ListTaskDefinitions"
+            - "ecs:DescribeTaskDefinition"
+            - "s3:ListBucket"
+            - "s3:GetObject"
+            Resource:
+            - "*"
+
 Outputs:
   TemplateID:
     Description: 'template id.'
@@ -433,3 +473,8 @@ Outputs:
     Value: !GetAtt CodeBuildRole.Arn
     Export:
       Name: !Sub '${AWS::StackName}-CodeBuildRoleARN'
+  ECSRoleARN:
+    Description: 'The ARN of the ECS role'
+    Value: !GetAtt ECSRole.Arn
+    Export:
+      Name: !Sub '${AWS::StackName}-ECSRoleARN'
