@@ -146,6 +146,7 @@ Resources:
 
               if( msgObj.hasOwnProperty("AlarmName") ) {
                 channel = "alarms";
+                severity = "warning";
                 message = msgObj.AlarmDescription;
               }
               else if( msgObj.hasOwnProperty("source") && msgObj.source == "aws.codepipeline" ) {
@@ -182,7 +183,7 @@ Resources:
                 message = "Pipeline state change: " + msgObj.detail.build-status;
                 message += "\nLog url: " + msgObj.detail.additional-information.logs.deep-link;
                 message += "\nLog CLI command: ";
-                message += "aws --query \"events[*].message\" --output text logs filter-log-events";
+                message += "aws --query \"events[*].message\" --output text --no-paginate true logs filter-log-events";
                 message += " --log-group-name " + msgObj.detail.additional-information.logs.group-name;
                 message += " --log-stream-names " + msgObj.detail.additional-information.logs.stream-name;
 
@@ -206,52 +207,6 @@ Resources:
                   "username": "AWS SNS via Lambda :: Ops",
                   "text": "*" + subject + "*"
               };
-
-              var dangerMessages = [
-                  " but with errors",
-                  " to RED",
-                  "During an aborted deployment",
-                  "Failed to deploy application",
-                  "Failed to deploy configuration",
-                  "has a dependent object",
-                  "is not authorized to perform",
-                  "Pending to Degraded",
-                  "Stack deletion failed",
-                  "Unsuccessful command execution",
-                  "You do not have permission",
-                  "Your quota allows for 0 more running instance"];
-
-              var warningMessages = [
-                  " aborted operation.",
-                  " to YELLOW",
-                  "Adding instance ",
-                  "Degraded to Info",
-                  "Deleting SNS topic",
-                  "is currently running under desired capacity",
-                  "Ok to Info",
-                  "Ok to Warning",
-                  "Pending Initialization",
-                  "Removed instance ",
-                  "Rollback of environment"
-                  ];
-
-              if (severity == "good") {
-                  for(var dangerMessagesItem in dangerMessages) {
-                      if (message.indexOf(dangerMessages[dangerMessagesItem]) != -1) {
-                          severity = "danger";
-                          break;
-                      }
-                  }
-              }
-
-              if (severity == "good") {
-                  for(var warningMessagesItem in warningMessages) {
-                      if (message.indexOf(warningMessages[warningMessagesItem]) != -1) {
-                          severity = "warning";
-                          break;
-                      }
-                  }
-              }
 
               postData.attachments = [
                   {
