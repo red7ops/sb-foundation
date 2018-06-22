@@ -183,6 +183,7 @@ Resources:
                 message = "Project state change: " + msgObj.detail['build-status'];
 
                 for(var phase in msgObj.detail['additional-information'].phases) {
+                  console.log(phase);
                   if(phase['phase-status'] == "FAILED") {
                     message += "\n" + phase['phase-type'] + " phase failed: " + phase['phase-context'].toString();
                   }
