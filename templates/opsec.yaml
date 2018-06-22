@@ -151,7 +151,49 @@ Resources:
               else if( msgObj.hasOwnProperty("source") && msgObj.source == "aws.codepipeline" ) {
                 channel = "pipelines";
                 subject = "PIPELINE: " + msgObj.detail.pipeline;
-                message = "Pipeline has finished with state: " + msgObj.detail.state;
+                message = "Pipeline state change: " + msgObj.detail.state;
+
+                switch(msgObj.detail.state) {
+                  case "FAILED":
+                    severity = "danger";
+                    break;
+
+                  case "CANCELED":
+                    severity = "warning";
+                    break;
+
+                  case "STARTED":
+                    severity = "#1a45f2";
+                    break;
+
+                  default:
+                    break;
+                }
+
+                if( msgObj.hasOwnProperty("channel") ) {
+                  channel = msgObj.channel;
+                }
+              }
+              else if( msgObj.hasOwnProperty("source") && msgObj.source == "aws.codebuild" ) {
+                if( msgObj.hasOwnProperty("channel") ) {
+                  channel = msgObj.channel;
+                }
+                subject = "BUILD: " + msgObj.detail.project-name;
+                message = "Pipeline state change: " + msgObj.detail.state;
+
+                switch(msgObj.detail.build-status) {
+                  case "FAILED":
+                    severity = "danger";
+                    break;
+
+                  case: "STOPPED":
+                    severity = "warning";
+                    break;
+
+                  default:
+                    break;
+                }
+
               }
 
               var postData = {
@@ -163,7 +205,6 @@ Resources:
               var dangerMessages = [
                   " but with errors",
                   " to RED",
-                  " FAILED",
                   "During an aborted deployment",
                   "Failed to deploy application",
                   "Failed to deploy configuration",
@@ -178,7 +219,6 @@ Resources:
               var warningMessages = [
                   " aborted operation.",
                   " to YELLOW",
-                  " CANCELED",
                   "Adding instance ",
                   "Degraded to Info",
                   "Deleting SNS topic",
@@ -190,14 +230,15 @@ Resources:
                   "Rollback of environment"
                   ];
 
-              for(var dangerMessagesItem in dangerMessages) {
-                  if (message.indexOf(dangerMessages[dangerMessagesItem]) != -1) {
-                      severity = "danger";
-                      break;
+              if (severity == "good") {
+                  for(var dangerMessagesItem in dangerMessages) {
+                      if (message.indexOf(dangerMessages[dangerMessagesItem]) != -1) {
+                          severity = "danger";
+                          break;
+                      }
                   }
               }
 
-              // Only check for warning messages if necessary
               if (severity == "good") {
                   for(var warningMessagesItem in warningMessages) {
                       if (message.indexOf(warningMessages[warningMessagesItem]) != -1) {
