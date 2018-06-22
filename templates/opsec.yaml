@@ -179,7 +179,12 @@ Resources:
                   channel = msgObj.channel;
                 }
                 subject = "BUILD: " + msgObj.detail.project-name;
-                message = "Pipeline state change: " + msgObj.detail.state;
+                message = "Pipeline state change: " + msgObj.detail.build-status;
+                message += "\nLog url: " + msgObj.detail.additional-information.logs.deep-link;
+                message += "\nLog CLI command: ";
+                message += "aws --query \"events[*].message\" --output text logs filter-log-events";
+                message += " --log-group-name " + msgObj.detail.additional-information.logs.group-name;
+                message += " --log-stream-names " + msgObj.detail.additional-information.logs.stream-name;
 
                 switch(msgObj.detail.build-status) {
                   case "FAILED":
