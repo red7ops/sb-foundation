@@ -179,10 +179,10 @@ Resources:
                 if( msgObj.hasOwnProperty("channel") ) {
                   channel = msgObj.channel;
                 }
-                subject = "BUILD: " + msgObj.detail.project-name;
-                message = "Project state change: " + msgObj.detail.build-status;
+                subject = "BUILD: " + msgObj.detail['project-name'];
+                message = "Project state change: " + msgObj.detail['build-status'];
 
-                switch(msgObj.detail.build-status) {
+                switch(msgObj.detail['build-status']) {
                   case "FAILED":
                     severity = "danger";
                     break;
