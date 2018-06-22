@@ -182,15 +182,15 @@ Resources:
                 subject = "BUILD: " + msgObj.detail['project-name'];
                 message = "Project state change: " + msgObj.detail['build-status'];
 
-                for(var phase in msgObj.detail['additional-information'].phases) {
-                  console.log(phase);
+                for(var i in msgObj.detail['additional-information'].phases) {
+                  var phase = msgObj.detail['additional-information'].phases[i]
                   if(phase['phase-status'] == "FAILED") {
                     message += "\n" + phase['phase-type'] + " phase failed: " + phase['phase-context'].toString();
                   }
                 }
 
-                message += "\nLogs: " + msgObj.detail['additional-information'].logs['deep-link'];
-                message += "\nCLI: " + "aws --query events[*].message --output text logs filter-log-events";
+                message += "\n\nLogs URL: " + msgObj.detail['additional-information'].logs['deep-link'];
+                message += "\nCLI command: " + "aws --query events[*].message --output text logs filter-log-events";
                 message += " --log-group-name " + msgObj.detail['additional-information'].logs['group-name'];
                 message += " --log-stream-names " + msgObj.detail['additional-information'].logs['stream-name'];
 
