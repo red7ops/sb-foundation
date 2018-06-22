@@ -186,7 +186,7 @@ Resources:
                     severity = "danger";
                     break;
 
-                  case: "STOPPED":
+                  case "STOPPED":
                     severity = "warning";
                     break;
 
