@@ -190,8 +190,8 @@ Resources:
 
                 message += "\nLogs: " + msgObj.detail.additional-information.logs.deep-link;
                 message += "\nCLI: " + "aws --query events[*].message --output text --no-paginate true logs filter-log-events";
-                message += " --log-group-name " + msgObj.detail.additional-information.logs.group-name;
-                message += " --log-stream-names " + msgObj.detail.additional-information.logs.stream-name;
+                message += " --log-group-name " + msgObj.detail.['additional-information'].logs.['group-name'];
+                message += " --log-stream-names " + msgObj.detail.['additional-information'].logs.['stream-name'];
 
                 switch(msgObj.detail['build-status']) {
                   case "FAILED":
