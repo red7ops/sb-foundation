@@ -180,9 +180,7 @@ Resources:
                   channel = msgObj.channel;
                 }
                 subject = "BUILD: " + msgObj.detail.project-name;
-                message = "Pipeline state change: " + msgObj.detail.build-status;
-                message += "\nLog url: " + msgObj.detail.link;
-                message += "\nLog CLI command: " + msgObj.detail.cli;
+                message = "Project state change: " + msgObj.detail.build-status;
 
                 switch(msgObj.detail.build-status) {
                   case "FAILED":
