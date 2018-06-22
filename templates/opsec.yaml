@@ -181,11 +181,8 @@ Resources:
                 }
                 subject = "BUILD: " + msgObj.detail.project-name;
                 message = "Pipeline state change: " + msgObj.detail.build-status;
-                message += "\nLog url: " + msgObj.detail.additional-information.logs.deep-link;
-                message += "\nLog CLI command: ";
-                message += "aws --query \"events[*].message\" --output text --no-paginate true logs filter-log-events";
-                message += " --log-group-name " + msgObj.detail.additional-information.logs.group-name;
-                message += " --log-stream-names " + msgObj.detail.additional-information.logs.stream-name;
+                message += "\nLog url: " + msgObj.detail.link;
+                message += "\nLog CLI command: " + msgObj.detail.cli;
 
                 switch(msgObj.detail.build-status) {
                   case "FAILED":
