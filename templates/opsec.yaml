@@ -168,8 +168,8 @@ Resources:
                     break;
 
                   case "SUCCEEDED":
+                    subject = "COMPLETED: " + channel;
                     channel = "announcements";
-                    subject = "COMPLETED: frameworks"
                     message = "A new build has finished for " + msgObj.detail.pipeline;
                     break;
 
