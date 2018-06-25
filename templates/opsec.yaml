@@ -167,7 +167,7 @@ Resources:
                     severity = "#1a45f2";
                     break;
 
-                  case "SUCEEDED":
+                  case "SUCCEEDED":
                     channel = "announcements";
                     subject = "COMPLETED: frameworks"
                     message = "A new build has finished for " + msgObj.detail.pipeline;
