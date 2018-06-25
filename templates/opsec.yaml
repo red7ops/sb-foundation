@@ -154,6 +154,10 @@ Resources:
                 subject = "PIPELINE: " + msgObj.detail.pipeline;
                 message = "Pipeline state change: " + msgObj.detail.state;
 
+                if( msgObj.hasOwnProperty("channel") ) {
+                  channel = msgObj.channel;
+                }
+
                 switch(msgObj.detail.state) {
                   case "FAILED":
                     severity = "danger";
@@ -175,10 +179,6 @@ Resources:
 
                   default:
                     break;
-                }
-
-                if( msgObj.hasOwnProperty("channel") ) {
-                  channel = msgObj.channel;
                 }
               }
               else if( msgObj.hasOwnProperty("source") && msgObj.source == "aws.codebuild" ) {
