@@ -120,6 +120,37 @@ Resources:
             Action:
             - logs:*
             Resource: arn:aws:logs:*:*:*
+  CodeCommitToSlack:
+    Type: 'AWS::Lambda::Function'
+    Properties:
+      Handler: index.handler
+      Timeout: 25
+      TracingConfig:
+        Mode: PassThrough
+      Role: !GetAtt SlackExecutionRole.Arn
+      Runtime: python2.7
+      Code:
+        ZipFile: !Sub |
+          import json
+          import boto3
+
+          codecommit = boto3.client('codecommit')
+
+          def handler(event, context):
+              #Log the updated references from the event
+              references = { reference['ref'] for reference in event['Records'][0]['codecommit']['references'] }
+              print("References: "  + str(references))
+
+              #Get the repository from the event and show its git clone URL
+              repository = event['Records'][0]['eventSourceARN'].split(':')[5]
+              try:
+                  response = codecommit.get_repository(repositoryName=repository)
+                  print("Clone URL: " +response['repositoryMetadata']['cloneUrlHttp'])
+                  return response['repositoryMetadata']['cloneUrlHttp']
+              except Exception as e:
+                  print(e)
+                  print('Error getting repository {}. Make sure it exists and that your repository is in the same region as this function.'.format(repository))
+                  raise e
   SnsToSlack:
     Type: 'AWS::Lambda::Function'
     Properties:
@@ -189,8 +220,8 @@ Resources:
                   }
                 }
 
-                message += "\n\nLogs URL: " + msgObj.detail['additional-information'].logs['deep-link'];
-                message += "\nCLI command: " + "aws --query events[*].message --output text logs filter-log-events";
+                message += "\n\nLogs URL and CLI command:\n " + msgObj.detail['additional-information'].logs['deep-link'];
+                message += "\naws --query events[*].message --output text logs filter-log-events";
                 message += " --log-group-name " + msgObj.detail['additional-information'].logs['group-name'];
                 message += " --log-stream-names " + msgObj.detail['additional-information'].logs['stream-name'];
 
