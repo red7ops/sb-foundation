@@ -120,6 +120,14 @@ Resources:
             Action:
             - logs:*
             Resource: arn:aws:logs:*:*:*
+          - Effect: Allow
+            Action:
+            - "codecommit:ListBranches"
+            - "codecommit:ListRepositories"
+            - "codecommit:BatchGetRepositories"
+            - "codecommit:Get*"
+            - "codecommit:GitPull"
+            Resource: !Sub 'arn:aws:codecommit:${AWS::Region}:${AWS::AccountId}:sb2-*'
   CodeCommitToSlack:
     Type: 'AWS::Lambda::Function'
     Properties:
