@@ -77,9 +77,15 @@ Resources:
     Properties:
       GroupDescription: 'SSH bastion host/instance'
       SecurityGroupIngress:
-      - IpProtocol: tcp
+      - Description: 'Allow SSH access.'
+        IpProtocol: tcp
         FromPort: 22
         ToPort: 22
+        CidrIp: '0.0.0.0/0'
+      - Description: 'Allow error reporting.'
+        IpProtocol: icmp
+        FromPort: -1
+        ToPort: -1
         CidrIp: '0.0.0.0/0'
       VpcId: !Ref VpcId
   InstanceProfile:

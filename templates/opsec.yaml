@@ -174,7 +174,7 @@ Resources:
                   case "SUCCEEDED":
                     subject = "COMPLETED: " + channel;
                     channel = "announcements";
-                    message = "A new build has finished for " + msgObj.detail.pipeline;
+                    message = "A new version is available for " + msgObj.detail.pipeline;
                     break;
 
                   default:
@@ -308,6 +308,8 @@ Resources:
             Resource:
             - !Sub 'arn:aws:codecommit:${AWS::Region}:${AWS::AccountId}:sb-*'
             - !Sub 'arn:aws:codecommit:${AWS::Region}:${AWS::AccountId}:sb2-*'
+            - !Sub 'arn:aws:codecommit:${AWS::Region}:${AWS::AccountId}:bb-*'
+            - !Sub 'arn:aws:codecommit:${AWS::Region}:${AWS::AccountId}:ob-*'
           -
             Effect: "Allow"
             Action:
@@ -323,6 +325,8 @@ Resources:
             - "cloudformation:ExecuteChangeSet"
             Resource:
             - !Sub 'arn:aws:cloudformation:${AWS::Region}:${AWS::AccountId}:stack/SB-*'
+            - !Sub 'arn:aws:cloudformation:${AWS::Region}:${AWS::AccountId}:stack/BB-*'
+            - !Sub 'arn:aws:cloudformation:${AWS::Region}:${AWS::AccountId}:stack/OB-*'
           -
             Effect: "Allow"
             Action:
@@ -331,6 +335,10 @@ Resources:
             Resource:
             - !Sub 'arn:aws:codebuild:${AWS::Region}:${AWS::AccountId}:project/SB-*'
             - !Sub 'arn:aws:codebuild:${AWS::Region}:${AWS::AccountId}:build/SB-*:*'
+            - !Sub 'arn:aws:codebuild:${AWS::Region}:${AWS::AccountId}:project/BB-*'
+            - !Sub 'arn:aws:codebuild:${AWS::Region}:${AWS::AccountId}:build/BB-*:*'
+            - !Sub 'arn:aws:codebuild:${AWS::Region}:${AWS::AccountId}:project/OB-*'
+            - !Sub 'arn:aws:codebuild:${AWS::Region}:${AWS::AccountId}:build/OB-*:*'
           -
             Effect: "Allow"
             Action:
