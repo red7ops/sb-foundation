@@ -101,15 +101,16 @@ Resources:
   SlackExecutionRole:
     Type: 'AWS::IAM::Role'
     Properties:
+      RoleName: !Sub '${AWS::StackName}-SlackExecutionRole'
       AssumeRolePolicyDocument:
         Version: '2012-10-17'
         Statement:
         - Effect: Allow
           Principal:
             Service:
-            - lambda.amazonaws.com
+            - "lambda.amazonaws.com"
           Action:
-          - sts:AssumeRole
+          - "sts:AssumeRole"
       Path: "/"
       Policies:
       - PolicyName: root
@@ -118,8 +119,8 @@ Resources:
           Statement:
           - Effect: Allow
             Action:
-            - logs:*
-            Resource: arn:aws:logs:*:*:*
+            - "logs:*"
+            Resource: "arn:aws:logs:*:*:*"
   SnsToSlack:
     Type: 'AWS::Lambda::Function'
     Properties:
@@ -259,7 +260,7 @@ Resources:
   CodePipelineRole:
     Type: 'AWS::IAM::Role'
     Properties:
-      RoleName: !Sub ${AWS::StackName}-CodePipelineRole
+      RoleName: !Sub '${AWS::StackName}-CodePipelineRole'
       AssumeRolePolicyDocument:
         Version: "2012-10-17"
         Statement:

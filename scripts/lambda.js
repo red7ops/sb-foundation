@@ -34,147 +34,51 @@ var util = require('util');
 /**
  * Message object.
  * @typedef {Object} MessageObject
- * @property {String} Subject
- * @property {String} Channel
- * @property {String} State
- * @property {String} Message
+ * @property {string} [pipeline]
+ * @property {string} [project]
+ * @property {string} [channel]
+ * @property {string} [state]
+ * @property {string} [link]
+ * @property {string} [command]
+ * @property {Object} [approval]
+ * @property {string} [approval.customData]
+ * @property {string} [approval.pipelineName]
+ * @property {string} [approval.approvalReviewLink]
+ * @property {string} [AlarmName]
+ * @property {string} [AlarmDescription]
  */
 
 /**
- *
- * @param event SnsEvent
- * @param context Object
+ * Data object.
+ * @typedef {Object} DataObject
+ * @property {string} channel
+ * @property {string} username
+ * @property {string} text
+ * @property {Attachment[]} attachments
+ */
+
+/**
+ * Attachment
+ * @typedef {Object} Attachment
+ * @property {string} color
+ * @property {string} text
+ */
+
+/**
+ * Approval custom data
+ * @typedef {Object} ApprovalData
+ * @property {string} channel
+ * @property {boolean} isProd
+ */
+
+/**
+ * Main
+ * @param {SnsEvent} event
+ * @param {Object} context
  */
 exports.handler = function(event, context) {
     console.log(JSON.stringify(event, null, 2));
-    console.log('From SNS:', event.Records[0].Sns.Message);
-
-    // Defaults
-    var message = event.Records[0].Sns.Message;
-    var subject = event.Records[0].Sns.Subject;
-    var channel = "scoreboard-sns";
-    var colour = "good";
-    var state = "UNKNOWN";
-
-    /**
-     * Message
-     * @type {MessageObject}
-     */
-    var msgObj = JSON.parse(message);
-    if( msgObj.hasOwnProperty("Subject") ) {
-        subject = msgObj.Subject;
-    }
-    if( msgObj.hasOwnProperty("Channel") ) {
-        channel = msgObj.Channel;
-    }
-    if( msgObj.hasOwnProperty("Message") ) {
-        message = msgObj.Message;
-    }
-    if( msgObj.hasOwnProperty("State") ) {
-        state = msgObj.State;
-        switch(state) {
-            case "FAILED":
-                colour = "danger";
-                break;
-
-            case "CANCELED":
-                colour = "warning";
-                break;
-
-            case "STARTED":
-            case "RESUMED":
-                colour = "#1a45f2";
-                break;
-
-            default:
-                break;
-        }
-    }
-
-
-    if( msgObj.hasOwnProperty("AlarmName") ) {
-        channel = "alarms";
-        colour = "warning";
-        message = msgObj.AlarmDescription;
-    }
-    else if( msgObj.hasOwnProperty("source") && msgObj.source == "aws.codepipeline" ) {
-        channel = "pipelines";
-        subject = "PIPELINE: " + msgObj.detail.pipeline;
-        message = "Pipeline state change: " + msgObj.detail.state;
-
-        if( msgObj.hasOwnProperty("channel") ) {
-            channel = msgObj.channel;
-        }
-
-        switch(msgObj.detail.state) {
-            case "FAILED":
-                colour = "danger";
-                break;
-
-            case "CANCELED":
-                colour = "warning";
-                break;
-
-            case "STARTED":
-                colour = "#1a45f2";
-                break;
-
-            case "SUCCEEDED":
-                subject = "COMPLETED: " + channel;
-                channel = "announcements";
-                message = "A new version is available for " + msgObj.detail.pipeline;
-                break;
-
-            default:
-                break;
-        }
-    }
-    else if( msgObj.hasOwnProperty("source") && msgObj.source == "aws.codebuild" ) {
-        if( msgObj.hasOwnProperty("channel") ) {
-            channel = msgObj.channel;
-        }
-        subject = "BUILD: " + msgObj.detail['project-name'];
-        message = "Project state change: " + msgObj.detail['build-status'];
-
-        for(var i in msgObj.detail['additional-information'].phases) {
-            var phase = msgObj.detail['additional-information'].phases[i]
-            if(phase['phase-status'] == "FAILED") {
-                message += "\n" + phase['phase-type'] + " phase failed: " + phase['phase-context'].toString();
-            }
-        }
-
-        message += "\n\nLogs URL and CLI command:\n " + msgObj.detail['additional-information'].logs['deep-link'];
-        message += "\naws --query events[*].message --output text logs filter-log-events";
-        message += " --log-group-name " + msgObj.detail['additional-information'].logs['group-name'];
-        message += " --log-stream-names " + msgObj.detail['additional-information'].logs['stream-name'];
-
-        switch(msgObj.detail['build-status']) {
-            case "FAILED":
-                colour = "danger";
-                break;
-
-            case "STOPPED":
-                colour = "warning";
-                break;
-
-            default:
-                break;
-        }
-
-    }
-
-    var postData = {
-        "channel": channel,
-        "username": "AWS SNS via Lambda :: Ops",
-        "text": "*" + subject + "*"
-    };
-
-    postData.attachments = [
-        {
-            "color": colour,
-            "text": message
-        }
-    ];
+    console.log('From SNS: ', event.Records[0].Sns.Message);
 
     var options = {
         method: 'POST',
@@ -194,6 +98,210 @@ exports.handler = function(event, context) {
         console.log('problem with request: ' + e.message);
     });
 
+    /**
+     * postData
+     * @type {DataObject}
+     */
+    var postData = {
+        "username": "AWS SNS via Lambda :: Ops"
+    };
+
+    /**
+     * SNS Data
+     * @type {SnsObject}
+     */
+    var sns = event.Records[0].Sns;
+    var type = setData(sns, postData);
+
+    console.log('Type: ', type);
+
+    postData.text = util.format("*%s: %s*", type, postData.text);
+
+
+
+
+    // var message = event.Records[0].Sns.Message;
+    // var subject = event.Records[0].Sns.Subject;
+
+
+    // var postData = {
+    //     "channel": "scoreboard-sns",
+    //     "username": "AWS SNS via Lambda :: Ops",
+    //     "text": subject,
+    //     "attachments": [
+    //         {
+    //             "color": colour,
+    //             "text": message
+    //         }
+    //     ]
+    //
+    // };
+
+
+
+
+
+
+
+
+
+
+
     req.write(util.format("%j", postData));
     req.end();
+
 };
+
+/**
+ *
+ * @param {SnsObject} sns
+ * @param {DataObject} data
+ * @returns {string} type
+ */
+function setData(sns, data)
+{
+    /**
+     * Message
+     * @type {MessageObject}
+     */
+    var msgObj = JSON.parse(message);
+
+    if( msgObj.hasOwnProperty("AlarmName") ) {
+        data.channel = "alarms";
+        data.text = msgObj.AlarmName;
+        data.attachments = [
+            {
+                "color": "warning",
+                "text": msgObj.AlarmDescription
+            }
+        ];
+        return "ALARM";
+    }
+    else if( msgObj.hasOwnProperty("approval") ) {
+        /**
+         * CustomData
+         * @type {ApprovalData}
+         */
+        var customData = JSON.parse(msgObj.approval.customData);
+        var link = msgObj.approval.approvalReviewLink;
+        var text = customData.isProd ? "Ready for Production" : "QA finished";
+        var colour = getColour(customData.isProd ? "ALERT" : "INFO");
+        var title = customData.isProd ? "This will update production!" : "No changes will be made.";
+        var value = util.format("<%s|Click to Approve>", link);
+
+        data.channel = customData.channel;
+        data.text = msgObj.approval.pipelineName;
+        data.attachments = [
+            {
+                "color": colour,
+                "pretext": text,
+                "fields": [
+                    {
+                        "title": title,
+                        "value": value
+                    }
+                ]
+            }
+        ];
+        return "APPROVAL";
+    }
+    else if( msgObj.hasOwnProperty("project") ) {
+        data.text = msgObj.project;
+
+        data.channel = msgObj.channel;
+        data.attachments = [
+            {
+                "color": getColour(msgObj.state),
+                "pretext": "Pipeline build has " + msgObj.state.toLowerCase(),
+                "fields": [
+                    {
+                        "title": "Log URL",
+                        "value": util.format("<%s|Click to View>", msgObj.link)
+                    },
+                    {
+                        "title": "CLI command",
+                        "value": msgObj.command,
+                        "short": false
+                    }
+                ]
+            }
+        ];
+
+        // for(var i in msgObj.detail['additional-information'].phases) {
+        //     var phase = msgObj.detail['additional-information'].phases[i]
+        //     if(phase['phase-status'] == "FAILED") {
+        //         message += "\n" + phase['phase-type'] + " phase failed: " + phase['phase-context'].toString();
+        //     }
+        // }
+
+        return "PROJECT";
+    }
+    else if( msgObj.hasOwnProperty("pipeline") ) {
+        data.text = msgObj.pipeline;
+
+        if(msgObj.state !== "SUCCEEDED")
+        {
+            data.channel = "announcements";
+            data.attachments = [
+                {
+                    "color": getColour(msgObj.state),
+                    "text": "Pipeline has completed successfully."
+                }
+            ];
+        }
+        else
+        {
+            data.channel = msgObj.channel;
+            data.attachments = [
+                {
+                    "color": getColour(msgObj.state),
+                    "pretext": "Pipeline has " + msgObj.state.toLowerCase(),
+                    "fields": [
+                        {
+                            "title": "Pipeline",
+                            "value": util.format("<%s|Click to View>", msgObj.link)
+                        }
+                    ]
+                }
+            ]
+        }
+
+        return "PIPELINE";
+    }
+    else
+    {
+
+    }
+
+
+
+    return "UNKNOWN";
+}
+
+/**
+ *
+ * @param {string} state
+ * @returns {string}
+ */
+function getColour(state)
+{
+    switch(state) {
+        case "FAILED":
+        case "STOPPED":
+            return "danger";
+
+        case "CANCELED":
+        case "ALERT":
+            return "warning";
+
+        case "STARTED":
+        case "RESUMED":
+        case "INFO":
+            return "#1a45f2";
+
+        default:
+            break;
+    }
+
+    return "good";
+}
