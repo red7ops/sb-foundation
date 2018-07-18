@@ -46,12 +46,12 @@ Resources:
             - "logs:*"
             Resource: "arn:aws:logs:*:*:*"
   LambdaEndpointSubscription:
-      Type: 'AWS::SNS::Subscription'
-      Properties:
-        Endpoint: !GetAtt SnsToSlack.Arn
-        Protocol: lambda
-        TopicArn:
-          'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'
+    Type: 'AWS::SNS::Subscription'
+    Properties:
+      Endpoint: !GetAtt SnsToSlack.Arn
+      Protocol: lambda
+      TopicArn:
+        'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'
   SnsToSlack:
     Type: 'AWS::Lambda::Function'
     Properties:
@@ -79,3 +79,4 @@ Outputs:
   StackName:
     Description: 'Stack name.'
     Value: !Sub '${AWS::StackName}'
+    

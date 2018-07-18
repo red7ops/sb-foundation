@@ -15,10 +15,10 @@ script:
 - yamllint .
 - find . -type f -name '*.json' | while
   read file; do set -ex
-  && jsonlint "$file"; done; fi
+  && jsonlint "$file"; done;
 - find . -type f -name '*.js' | while
   read file; do set -ex
-  && pyjslint "$file"; done; fi
+  && pyjslint "$file"; done;
 - if [ "$TRAVIS_PULL_REQUEST" = "false" & "$TRAVIS_TEST_RESULT" = 0 ]; then find . -type f -name '*.y?ml' |
   sed "s|^\./||" | while read file; do set -ex
   && sed -i "s/__VERSION__/$TRAVIS_COMMIT/g" "$file"
