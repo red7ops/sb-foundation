@@ -1,25 +1,21 @@
 AWSTemplateFormatVersion: '2010-09-09'
-Description: 'Operations and Security: Alerts and permissions'
+Description: 'Operations: Alerts and permissions'
 Metadata:
   'AWS::CloudFormation::Interface':
     ParameterGroups:
     - Label:
         default: 'Alert Parameters'
       Parameters:
-      - SlackEndpoint
       - FallbackEmail
     - Label:
-        default: 'IAM Parameters'
+        default: 'Bucket Parameters'
       Parameters:
       - ArtifactStoreS3
 Parameters:
   FallbackEmail:
-    Description: 'Optional email address that will receive alerts if alerts can not be delivered'
+    Description: '(Optional) Email address that will receive message if alerts can not be delivered'
     Type: String
     Default: ''
-  SlackEndpoint:
-    Description: 'Custom endpoint for slack notifications.'
-    Type: String
   ArtifactStoreS3:
     Description: 'Name of artifact bucket'
     Type: String
@@ -85,12 +81,6 @@ Resources:
       Dimensions:
       - Name: TopicName
         Value: !GetAtt Topic.TopicName
-  LambdaEndpointSubscription:
-    Type: 'AWS::SNS::Subscription'
-    Properties:
-      Endpoint: !GetAtt SnsToSlack.Arn
-      Protocol: lambda
-      TopicArn: !Ref Topic
   FallbackEmailSubscription:
     Condition: HasFallbackEmail
     Type: 'AWS::SNS::Subscription'
@@ -98,165 +88,6 @@ Resources:
       Endpoint: !Ref FallbackEmail
       Protocol: email
       TopicArn: !Ref FallbackTopic
-  SlackExecutionRole:
-    Type: 'AWS::IAM::Role'
-    Properties:
-      RoleName: !Sub '${AWS::StackName}-SlackExecutionRole'
-      AssumeRolePolicyDocument:
-        Version: '2012-10-17'
-        Statement:
-        - Effect: Allow
-          Principal:
-            Service:
-            - "lambda.amazonaws.com"
-          Action:
-          - "sts:AssumeRole"
-      Path: "/"
-      Policies:
-      - PolicyName: root
-        PolicyDocument:
-          Version: '2012-10-17'
-          Statement:
-          - Effect: Allow
-            Action:
-            - "logs:*"
-            Resource: "arn:aws:logs:*:*:*"
-  SnsToSlack:
-    Type: 'AWS::Lambda::Function'
-    Properties:
-      Handler: index.handler
-      Timeout: 25
-      TracingConfig:
-        Mode: PassThrough
-      Role: !GetAtt SlackExecutionRole.Arn
-      Runtime: nodejs6.10
-      Code:
-        ZipFile: !Sub |
-          var https = require('https');
-          var util = require('util');
-
-          exports.handler = function(event, context) {
-              console.log(JSON.stringify(event, null, 2));
-              console.log('From SNS:', event.Records[0].Sns.Message);
-
-              var message = event.Records[0].Sns.Message;
-              var subject = event.Records[0].Sns.Subject;
-              var msgObj = JSON.parse(message);
-              var channel = "scoreboard-sns";
-              var severity = "good";
-
-              if( msgObj.hasOwnProperty("AlarmName") ) {
-                channel = "alarms";
-                severity = "warning";
-                message = msgObj.AlarmDescription;
-              }
-              else if( msgObj.hasOwnProperty("source") && msgObj.source == "aws.codepipeline" ) {
-                channel = "pipelines";
-                subject = "PIPELINE: " + msgObj.detail.pipeline;
-                message = "Pipeline state change: " + msgObj.detail.state;
-
-                if( msgObj.hasOwnProperty("channel") ) {
-                  channel = msgObj.channel;
-                }
-
-                switch(msgObj.detail.state) {
-                  case "FAILED":
-                    severity = "danger";
-                    break;
-
-                  case "CANCELED":
-                    severity = "warning";
-                    break;
-
-                  case "STARTED":
-                    severity = "#1a45f2";
-                    break;
-
-                  case "SUCCEEDED":
-                    subject = "COMPLETED: " + channel;
-                    channel = "announcements";
-                    message = "A new version is available for " + msgObj.detail.pipeline;
-                    break;
-
-                  default:
-                    break;
-                }
-              }
-              else if( msgObj.hasOwnProperty("source") && msgObj.source == "aws.codebuild" ) {
-                if( msgObj.hasOwnProperty("channel") ) {
-                  channel = msgObj.channel;
-                }
-                subject = "BUILD: " + msgObj.detail['project-name'];
-                message = "Project state change: " + msgObj.detail['build-status'];
-
-                for(var i in msgObj.detail['additional-information'].phases) {
-                  var phase = msgObj.detail['additional-information'].phases[i]
-                  if(phase['phase-status'] == "FAILED") {
-                    message += "\n" + phase['phase-type'] + " phase failed: " + phase['phase-context'].toString();
-                  }
-                }
-
-                message += "\n\nLogs URL and CLI command:\n " + msgObj.detail['additional-information'].logs['deep-link'];
-                message += "\naws --query events[*].message --output text logs filter-log-events";
-                message += " --log-group-name " + msgObj.detail['additional-information'].logs['group-name'];
-                message += " --log-stream-names " + msgObj.detail['additional-information'].logs['stream-name'];
-
-                switch(msgObj.detail['build-status']) {
-                  case "FAILED":
-                    severity = "danger";
-                    break;
-
-                  case "STOPPED":
-                    severity = "warning";
-                    break;
-
-                  default:
-                    break;
-                }
-
-              }
-
-              var postData = {
-                  "channel": channel,
-                  "username": "AWS SNS via Lambda :: Ops",
-                  "text": "*" + subject + "*"
-              };
-
-              postData.attachments = [
-                  {
-                      "color": severity,
-                      "text": message
-                  }
-              ];
-
-              var options = {
-                  method: 'POST',
-                  hostname: 'hooks.slack.com',
-                  port: 443,
-                  path: '/services/${SlackEndpoint}'
-              };
-
-              var req = https.request(options, function(res) {
-                res.setEncoding('utf8');
-                res.on('data', function (chunk) {
-                  context.done(null);
-                });
-              });
-
-              req.on('error', function(e) {
-                console.log('problem with request: ' + e.message);
-              });
-
-              req.write(util.format("%j", postData));
-              req.end();
-          };
-  LambdaInvokePermission:
-    Type: 'AWS::Lambda::Permission'
-    Properties:
-      Action: lambda:InvokeFunction
-      Principal: sns.amazonaws.com
-      SourceArn: !Ref Topic
-      FunctionName: !GetAtt SnsToSlack.Arn
   CodePipelineRole:
     Type: 'AWS::IAM::Role'
     Properties:
@@ -431,7 +262,6 @@ Resources:
             Resource:
             - !Sub 'arn:aws:codecommit:${AWS::Region}:${AWS::AccountId}:sb-*'
             - !Sub 'arn:aws:codecommit:${AWS::Region}:${AWS::AccountId}:sb2-*'
-
   ECSRole:
     Type: 'AWS::IAM::Role'
     Properties:
@@ -472,9 +302,6 @@ Resources:
             - "*"
 
 Outputs:
-  TemplateID:
-    Description: 'template id.'
-    Value: 'opsec'
   TemplateVersion:
     Description: 'template version.'
     Value: '__VERSION__'

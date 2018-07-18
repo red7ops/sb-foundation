@@ -1,0 +1,81 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'Operations: Slack interface'
+Metadata:
+  'AWS::CloudFormation::Interface':
+    ParameterGroups:
+    - Label:
+        default: 'Slack Parameters'
+      Parameters:
+      - SlackEndpoint
+    - Label:
+        default: 'Dependency Parameters'
+      Parameters:
+      - LambdaStoreS3
+Parameters:
+  ParentAlertStack:
+    Description: 'Name of parent alert stack (opsec)'
+    Type: String
+  SlackEndpoint:
+    Description: 'Custom endpoint for slack notifications.'
+    Type: String
+  LambdaStoreS3:
+    Description: 'Name of script bucket'
+    Type: String
+Resources:
+  SlackExecutionRole:
+    Type: 'AWS::IAM::Role'
+    Properties:
+      RoleName: !Sub '${AWS::StackName}-SlackExecutionRole'
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+        - Effect: Allow
+          Principal:
+            Service:
+            - "lambda.amazonaws.com"
+          Action:
+          - "sts:AssumeRole"
+      Path: "/"
+      Policies:
+      - PolicyName: root
+        PolicyDocument:
+          Version: '2012-10-17'
+          Statement:
+          - Effect: Allow
+            Action:
+            - "logs:*"
+            Resource: "arn:aws:logs:*:*:*"
+  LambdaEndpointSubscription:
+      Type: 'AWS::SNS::Subscription'
+      Properties:
+        Endpoint: !GetAtt SnsToSlack.Arn
+        Protocol: lambda
+        TopicArn:
+          'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'
+  SnsToSlack:
+    Type: 'AWS::Lambda::Function'
+    Properties:
+      Handler: index.handler
+      Timeout: 25
+      TracingConfig:
+        Mode: PassThrough
+      Role: !GetAtt SlackExecutionRole.Arn
+      Runtime: nodejs6.10
+      Code:
+        S3Bucket: !Ref
+        S3Key: "Foundations/scripts/lambda.js"
+  LambdaInvokePermission:
+    Type: 'AWS::Lambda::Permission'
+    Properties:
+      Action: lambda:InvokeFunction
+      Principal: sns.amazonaws.com
+      SourceArn:
+        'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'
+      FunctionName: !GetAtt SnsToSlack.Arn
+Outputs:
+  TemplateVersion:
+    Description: 'template version.'
+    Value: '__VERSION__'
+  StackName:
+    Description: 'Stack name.'
+    Value: !Sub '${AWS::StackName}'
