@@ -23,4 +23,4 @@ script:
   && sed -i "s/__VERSION__/$TRAVIS_BUILD_NUMBER/g" "$file"
   && aws s3 cp "$file" "s3://$S3_BUCKET/Foundations/$file"
   && aws cloudformation validate-template --template-url "https://s3.amazonaws.com/$S3_BUCKET/Foundations/$file"
-  > /dev/null; done; fi
+  > /dev/null; done; && fi

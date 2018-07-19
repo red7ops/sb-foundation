@@ -13,7 +13,7 @@ Metadata:
       - LambdaStoreS3
 Parameters:
   ParentAlertStack:
-    Description: 'Name of parent alert stack (opsec)'
+    Description: 'Name of parent alert stack (OpSec)'
     Type: String
   SlackEndpoint:
     Description: 'Custom endpoint for slack notifications.'
@@ -62,7 +62,7 @@ Resources:
       Role: !GetAtt SlackExecutionRole.Arn
       Runtime: nodejs6.10
       Code:
-        S3Bucket: !Ref
+        S3Bucket: !Ref LambdaStoreS3
         S3Key: "Foundations/scripts/lambda.js"
   LambdaInvokePermission:
     Type: 'AWS::Lambda::Permission'

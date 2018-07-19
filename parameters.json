@@ -1,0 +1,14 @@
+[
+  {
+    "ParameterKey": "ArtifactStoreS3",
+    "ParameterValue": "r7-artifacts"
+  },
+  {
+    "ParameterKey": "SourceRepo",
+    "ParameterValue": "sb-foundations"
+  },
+  {
+    "ParameterKey": "SourceBranch",
+    "ParameterValue": "aws"
+  }
+]

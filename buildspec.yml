@@ -1,0 +1,38 @@
+version: 0.2
+
+env:
+  variables:
+    OPS: operations
+
+phases:
+  install:
+    commands:
+      - pip install yamllint
+      - pip install jsonlint
+  pre_build:
+    commands:
+      - yamllint .
+      - |
+        find . -type f -name '*.json' | while read file; do
+          set -ex && jsonlint "$file"
+        done
+      - |
+        find . -type f -name "$OPS/*.y?ml" | while read file; do
+          set -ex && aws cloudformation validate-template --template-body "file://$file"
+        done
+  build:
+    commands:
+      - echo "Copying $OPS files to S3"
+      - |
+        for file in $OPS; do
+          if [ "X$TEMPLATE_PREFIX" = "X" ]; then
+            aws s3 cp "$file" "s3://$TEMPLATE_BUCKET/$file"
+          else
+            aws s3 cp "$file" "s3://$TEMPLATE_BUCKET/$TEMPLATE_PREFIX/$file"
+          fi
+        done
+      - echo "Building templates..."
+artifacts:
+  files:
+    - 'operations/*'
+    - 'templates/*'
