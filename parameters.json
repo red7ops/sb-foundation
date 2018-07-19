@@ -4,6 +4,10 @@
     "ParameterValue": "r7-artifacts"
   },
   {
+    "ParameterKey": "TemplateStoreS3",
+    "ParameterValue": "r7-sb-foundation"
+  },
+  {
     "ParameterKey": "SourceRepo",
     "ParameterValue": "sb-foundations"
   },

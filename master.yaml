@@ -16,6 +16,9 @@ Parameters:
   ArtifactStoreS3:
     Description: 'Bucket for storing artifacts.'
     Type: String
+  TemplateStoreS3:
+    Description: 'Bucket for storing templates and scripts.'
+    Type: String
   SourceRepo:
     Description: 'CodeCommit repository name of foundations.'
     Type: String
@@ -180,7 +183,7 @@ Resources:
           Actions:
           - Name: BuildAction
             InputArtifacts:
-            - Name: TemplateOutput
+            - Name: SourceOutput
             ActionTypeId:
               Category: Build
               Owner: AWS
@@ -204,8 +207,10 @@ Resources:
         ComputeType: BUILD_GENERAL1_SMALL
         Image: aws/codebuild/python:3.6.5
         EnvironmentVariables:
-        - Name: STORAGE_BUCKET
-          Value: !Ref
+        - Name: TEMPLATE_BUCKET
+          Value: !Ref ArtifactStoreS3
+        - Name: TEMPLATE_PREFIX
+          Value: !Ref AWS::StackName
       Source:
         Type: CODEPIPELINE
       TimeoutInMinutes: 10
