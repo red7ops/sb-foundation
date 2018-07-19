@@ -105,9 +105,10 @@ exports.handler = function(event, context, callback) {
      * @type {DataObject}
      */
     var postData = {
-        "channel": "scoreboard-sns",
-        "username": "AWS SNS via Lambda :: Ops",
-        "text": event.Records[0].Sns.Subject
+        channel: "scoreboard-sns",
+        username: "AWS SNS via Lambda :: Ops",
+        text: event.Records[0].Sns.Subject,
+        attachments: []
     };
 
     /**
@@ -258,8 +259,6 @@ function setData(msgObj, data)
 
 function addAttachments(msgObj, data)
 {
-    data.attachments = [];
-
     switch (msgObj.type)
     {
         case "ALARM":
