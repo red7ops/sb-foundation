@@ -18,7 +18,7 @@ script:
   read file; do set -ex
   && jsonlint "$file"; done;
 - echo "upload"
-  && if [ "$TRAVIS_PULL_REQUEST" = "false" && "$TRAVIS_TEST_RESULT" = 0 ]; then find . -type f -name '*.y?ml' |
+  && if [ "$TRAVIS_PULL_REQUEST" = "false" ] && [ "$TRAVIS_TEST_RESULT" == 0 ]; then find . -type f -name '*.y?ml' |
   sed "s|^\./||" | while read file; do set -ex
   && sed -i "s/__VERSION__/$TRAVIS_BUILD_NUMBER/g" "$file"
   && aws s3 cp "$file" "s3://$S3_BUCKET/Foundations/$file"
