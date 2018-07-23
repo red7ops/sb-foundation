@@ -156,44 +156,44 @@ Resources:
             Resource:
             - !Sub 'arn:aws:codecommit:${AWS::Region}:${AWS::AccountId}:${SourceRepo}'
   MasterPipeline:
-      Type: 'AWS::CodePipeline::Pipeline'
-      Properties:
-        ArtifactStore:
-          Type: S3
-          Location: !Ref ArtifactStoreS3
-        Name: !Sub '${AWS::StackName}-MasterPipeline'
-        RoleArn: !GetAtt CodePipelineRole.Arn
-        RestartExecutionOnUpdate: true
-        Stages:
-        - Name: Source
-          Actions:
-          - Name: SourceAction
-            ActionTypeId:
-              Category: Source
-              Owner: AWS
-              Version: 1
-              Provider: CodeCommit
-            OutputArtifacts:
-            - Name: SourceOutput
-            Configuration:
-              BranchName: !Ref SourceBranch
-              RepositoryName: !Ref SourceRepo
-            RunOrder: 1
-        - Name: Build
-          Actions:
-          - Name: BuildAction
-            InputArtifacts:
-            - Name: SourceOutput
-            ActionTypeId:
-              Category: Build
-              Owner: AWS
-              Version: 1
-              Provider: CodeBuild
-            OutputArtifacts:
-            - Name: BuildArtifact
-            Configuration:
-              ProjectName: !Ref MasterProject
-            RunOrder: 1
+    Type: 'AWS::CodePipeline::Pipeline'
+    Properties:
+      ArtifactStore:
+        Type: S3
+        Location: !Ref ArtifactStoreS3
+      Name: !Sub '${AWS::StackName}-MasterPipeline'
+      RoleArn: !GetAtt CodePipelineRole.Arn
+      RestartExecutionOnUpdate: true
+      Stages:
+      - Name: Source
+        Actions:
+        - Name: SourceAction
+          ActionTypeId:
+            Category: Source
+            Owner: AWS
+            Version: 1
+            Provider: CodeCommit
+          OutputArtifacts:
+          - Name: SourceOutput
+          Configuration:
+            BranchName: !Ref SourceBranch
+            RepositoryName: !Ref SourceRepo
+          RunOrder: 1
+      - Name: Build
+        Actions:
+        - Name: BuildAction
+          InputArtifacts:
+          - Name: SourceOutput
+          ActionTypeId:
+            Category: Build
+            Owner: AWS
+            Version: 1
+            Provider: CodeBuild
+          OutputArtifacts:
+          - Name: BuildArtifact
+          Configuration:
+            ProjectName: !Ref MasterProject
+          RunOrder: 1
   MasterProject:
     Type: 'AWS::CodeBuild::Project'
     Properties:
