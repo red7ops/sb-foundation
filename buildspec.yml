@@ -26,7 +26,7 @@ phases:
     commands:
     - echo "Copying $OPS files to S3"
     - |
-      for file in $OPS; do
+      find "$OPS" -type f | while read file; do
         aws s3 cp "$file" "s3://$TEMPLATE_BUCKET/$TEMPLATE_PREFIX/$file"
       done
     - echo "Building templates..."

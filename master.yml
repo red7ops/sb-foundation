@@ -32,57 +32,57 @@ Resources:
     Properties:
       RoleName: !Sub '${AWS::StackName}-CodePipelineRole'
       AssumeRolePolicyDocument:
-        Version: "2012-10-17"
+        Version: '2012-10-17'
         Statement:
         -
-          Effect: "Allow"
+          Effect: 'Allow'
           Principal:
             Service:
-            - "codepipeline.amazonaws.com"
+            - 'codepipeline.amazonaws.com'
           Action:
-          - "sts:AssumeRole"
+          - 'sts:AssumeRole'
       Path: /
       Policies:
       -
-        PolicyName: "CodePipelineNestedCFNAccessPolicy"
+        PolicyName: 'CodePipelineNestedCFNAccessPolicy'
         PolicyDocument:
-          Version: "2012-10-17"
+          Version: '2012-10-17'
           Statement:
           -
-            Effect: "Allow"
+            Effect: 'Allow'
             Action:
-            - "s3:DeleteObject"
-            - "s3:GetBucketVersioning"
-            - "s3:GetObject"
-            - "s3:GetObjectVersion"
-            - "s3:ListBucket"
-            - "s3:PutObject"
-            - "s3:GetBucketPolicy"
+            - 's3:DeleteObject'
+            - 's3:GetBucketVersioning'
+            - 's3:GetObject'
+            - 's3:GetObjectVersion'
+            - 's3:ListBucket'
+            - 's3:PutObject'
+            - 's3:GetBucketPolicy'
             Resource:
             - !Sub 'arn:aws:s3:::${ArtifactStoreS3}'
             - !Sub 'arn:aws:s3:::${ArtifactStoreS3}/*'
           -
-            Effect: "Allow"
+            Effect: 'Allow'
             Action:
-            - "sns:Publish"
+            - 'sns:Publish'
             Resource:
             - !Sub 'arn:aws:sns:${AWS::Region}:${AWS::AccountId}:*'
           -
-            Effect: "Allow"
+            Effect: 'Allow'
             Action:
-            - "codecommit:ListBranches"
-            - "codecommit:ListRepositories"
-            - "codecommit:BatchGetRepositories"
-            - "codecommit:Get*"
-            - "codecommit:GitPull"
-            - "codecommit:UploadArchive"
+            - 'codecommit:ListBranches'
+            - 'codecommit:ListRepositories'
+            - 'codecommit:BatchGetRepositories'
+            - 'codecommit:Get*'
+            - 'codecommit:GitPull'
+            - 'codecommit:UploadArchive'
             Resource:
             - !Sub 'arn:aws:codecommit:${AWS::Region}:${AWS::AccountId}:${SourceRepo}'
           -
-            Effect: "Allow"
+            Effect: 'Allow'
             Action:
-            - "codebuild:StartBuild"
-            - "codebuild:BatchGetBuilds"
+            - 'codebuild:StartBuild'
+            - 'codebuild:BatchGetBuilds'
             Resource:
             - !Sub 'arn:aws:codebuild:${AWS::Region}:${AWS::AccountId}:project/${AWS::StackName}-MasterProject'
             - !Sub 'arn:aws:codebuild:${AWS::Region}:${AWS::AccountId}:build/${AWS::StackName}-MasterProject:*'
@@ -91,69 +91,71 @@ Resources:
     Properties:
       RoleName: !Sub '${AWS::StackName}-CodeBuildRole'
       AssumeRolePolicyDocument:
-        Version: "2012-10-17"
+        Version: '2012-10-17'
         Statement:
         -
-          Effect: "Allow"
+          Effect: 'Allow'
           Principal:
             Service:
-            - "codebuild.amazonaws.com"
+            - 'codebuild.amazonaws.com'
           Action:
-          - "sts:AssumeRole"
+          - 'sts:AssumeRole'
       Path: /service-role/
       Policies:
       -
-        PolicyName: "CodeBuildNestedCFNAccessPolicy"
+        PolicyName: 'CodeBuildNestedCFNAccessPolicy'
         PolicyDocument:
-          Version: "2012-10-17"
+          Version: '2012-10-17'
           Statement:
           -
-            Effect: "Allow"
+            Effect: 'Allow'
             Action:
-            - "ec2:Describe*"
-            - "cloudformation:ValidateTemplate"
-            - "autoscaling:Describe*"
-            - "iam:Get*"
-            - "iam:List*"
-            - "logs:Describe*"
-            - "logs:Get*"
-            - "tag:Get*"
-            - "ssm:GetParameters"
+            - 'ec2:Describe*'
+            - 'cloudformation:ValidateTemplate'
+            - 'autoscaling:Describe*'
+            - 'iam:Get*'
+            - 'iam:List*'
+            - 'logs:Describe*'
+            - 'logs:Get*'
+            - 'tag:Get*'
+            - 'ssm:GetParameters'
             Resource:
-            - "*"
+            - '*'
           -
-            Effect: "Allow"
+            Effect: 'Allow'
             Action:
-            - "logs:CreateLogGroup"
-            - "logs:CreateLogStream"
-            - "logs:PutLogEvents"
+            - 'logs:CreateLogGroup'
+            - 'logs:CreateLogStream'
+            - 'logs:PutLogEvents'
             Resource:
             - !Sub 'arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/codebuild/*'
           -
-            Effect: "Allow"
+            Effect: 'Allow'
             Action:
-            - "s3:PutObject"
-            - "s3:GetObject"
-            - "s3:GetObjectVersion"
-            - "s3:ListBucket"
+            - 's3:PutObject'
+            - 's3:GetObject'
+            - 's3:GetObjectVersion'
+            - 's3:ListBucket'
             Resource:
             - !Sub 'arn:aws:s3:::codepipeline-${AWS::Region}-*'
             - !Sub 'arn:aws:s3:::${ArtifactStoreS3}/*'
             - !Sub 'arn:aws:s3:::${ArtifactStoreS3}'
+            - !Sub 'arn:aws:s3:::${TemplateStoreS3}/*'
+            - !Sub 'arn:aws:s3:::${TemplateStoreS3}'
           -
-            Effect: "Allow"
+            Effect: 'Allow'
             Action:
-            - "codecommit:BatchGet*"
-            - "codecommit:Get*"
-            - "codecommit:List*"
-            - "codecommit:Describe*"
-            - "codecommit:Put*"
-            - "codecommit:Post*"
-            - "codecommit:Merge*"
-            - "codecommit:Test*"
-            - "codecommit:Update*"
-            - "codecommit:GitPull"
-            - "codecommit:GitPush"
+            - 'codecommit:BatchGet*'
+            - 'codecommit:Get*'
+            - 'codecommit:List*'
+            - 'codecommit:Describe*'
+            - 'codecommit:Put*'
+            - 'codecommit:Post*'
+            - 'codecommit:Merge*'
+            - 'codecommit:Test*'
+            - 'codecommit:Update*'
+            - 'codecommit:GitPull'
+            - 'codecommit:GitPush'
             Resource:
             - !Sub 'arn:aws:codecommit:${AWS::Region}:${AWS::AccountId}:${SourceRepo}'
   MasterPipeline:
@@ -226,4 +228,4 @@ Resources:
 Outputs:
   Pipeline:
     Description: URL of master pipeline.
-    Value: !Sub "https://console.aws.amazon.com/codepipeline/home?region=${AWS::Region}#/view/${MasterPipeline}"
+    Value: !Sub 'https://console.aws.amazon.com/codepipeline/home?region=${AWS::Region}#/view/${MasterPipeline}'
