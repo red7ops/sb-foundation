@@ -20,14 +20,14 @@ phases:
     - |
       find "$OPS" -type f -name "*.yml" | while read file; do
         aws s3 cp "$file" "s3://$TEMPLATE_BUCKET/Validation/$file"
-        set -ex && aws cloudformation validate-template --template-url "s3://$TEMPLATE_BUCKET/Validation/$file"
+        set -ex && aws cloudformation validate-template --template-url "https://s3.amazonaws.com/$TEMPLATE_BUCKET/Validation/$file"
       done
   build:
     commands:
     - echo "Copying $OPS files to S3"
     - |
       for file in $OPS; do
-        aws s3 cp "$file" "https://s3.amazonaws.com/$TEMPLATE_BUCKET/$TEMPLATE_PREFIX/$file"
+        aws s3 cp "$file" "s3://$TEMPLATE_BUCKET/$TEMPLATE_PREFIX/$file"
       done
     - echo "Building templates..."
 artifacts:
