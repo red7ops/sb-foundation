@@ -18,7 +18,7 @@ phases:
         set -ex && jsonlint "$file"
       done
     - |
-      find . -type f -name "$OPS/*.y?ml" | while read file; do
+      find "$OPS" -type f -name "*.yml" | while read file; do
         set -ex && aws cloudformation validate-template --template-body "file://$file"
       done
   build:
