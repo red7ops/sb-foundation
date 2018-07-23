@@ -7,6 +7,7 @@ Metadata:
         default: 'Bucket Details'
       Parameters:
       - ArtifactStoreS3
+      - TemplateStoreS3
     - Label:
         default: 'Repository Details'
       Parameters:
@@ -208,7 +209,7 @@ Resources:
         Image: aws/codebuild/python:3.6.5
         EnvironmentVariables:
         - Name: TEMPLATE_BUCKET
-          Value: !Ref ArtifactStoreS3
+          Value: !Ref TemplateStoreS3
         - Name: TEMPLATE_PREFIX
           Value: !Ref AWS::StackName
       Source:

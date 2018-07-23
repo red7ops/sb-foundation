@@ -21,6 +21,9 @@ Parameters:
   LambdaStoreS3:
     Description: 'Name of script bucket'
     Type: String
+  LambdaLocation:
+    Description: 'Location of script in bucket'
+    Type: String
 Resources:
   SlackExecutionRole:
     Type: 'AWS::IAM::Role'
@@ -63,7 +66,7 @@ Resources:
       Runtime: nodejs6.10
       Code:
         S3Bucket: !Ref LambdaStoreS3
-        S3Key: "Foundations/scripts/lambda.js"
+        S3Key: !Sub "${LambdaLocation}/lambda.js"
   LambdaInvokePermission:
     Type: 'AWS::Lambda::Permission'
     Properties:
