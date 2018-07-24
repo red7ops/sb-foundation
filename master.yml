@@ -81,15 +81,31 @@ Resources:
           -
             Effect: 'Allow'
             Action:
+            - 'cloudformation:CreateChangeSet'
+            - 'cloudformation:CreateStack'
+            - 'cloudformation:CreateUploadBucket'
+            - 'cloudformation:DeleteChangeSet'
+#            - 'cloudformation:DeleteStack'
+            - 'cloudformation:Describe*'
+            - 'cloudformation:List*'
+            - 'cloudformation:UpdateStack'
+            - 'cloudformation:ValidateTemplate'
+            - 'cloudformation:ExecuteChangeSet'
+            Resource:
+            - !Sub 'arn:aws:cloudformation:${AWS::Region}:${AWS::AccountId}:stack/SB-OpSec/*'
+            - !Sub 'arn:aws:cloudformation:${AWS::Region}:${AWS::AccountId}:stack/SB-Slack/*'
+          -
+            Effect: 'Allow'
+            Action:
             - 'codebuild:StartBuild'
             - 'codebuild:BatchGetBuilds'
             Resource:
             - !Sub 'arn:aws:codebuild:${AWS::Region}:${AWS::AccountId}:project/${AWS::StackName}-MasterProject'
             - !Sub 'arn:aws:codebuild:${AWS::Region}:${AWS::AccountId}:build/${AWS::StackName}-MasterProject:*'
           -
-            Effect: "Allow"
+            Effect: 'Allow'
             Action:
-            - "iam:PassRole"
+            - 'iam:PassRole'
             Resource:
             - !Sub 'arn:aws:iam::${AWS::AccountId}:role/${AWS::StackName}-CloudFormationRole'
   CodeBuildRole:
@@ -169,76 +185,76 @@ Resources:
     Properties:
       RoleName: !Sub '${AWS::StackName}-CloudFormationRole'
       AssumeRolePolicyDocument:
-        Version: "2012-10-17"
+        Version: '2012-10-17'
         Statement:
         -
-          Effect: "Allow"
+          Effect: 'Allow'
           Principal:
             Service:
-            - "cloudformation.amazonaws.com"
+            - 'cloudformation.amazonaws.com'
           Action:
-          - "sts:AssumeRole"
+          - 'sts:AssumeRole'
       Path: /
       Policies:
       -
-        PolicyName: "CloudFormationAccessPolicy"
+        PolicyName: 'CloudFormationAccessPolicy'
         PolicyDocument:
-          Version: "2012-10-17"
+          Version: '2012-10-17'
           Statement:
           -
-            Effect: "Allow"
+            Effect: 'Allow'
             Action:
-            - "iam:AddRoleToInstanceProfile"
-            - "iam:AttachRolePolicy"
-            - "iam:CreateInstanceProfile"
-            - "iam:CreatePolicy"
-            - "iam:CreateRole"
-            - "iam:CreateServiceLinkedRole"
-            - "iam:DeleteInstanceProfile"
-            - "iam:DeletePolicy"
-            - "iam:DeleteRole"
-            - "iam:DeleteRolePolicy"
-            - "iam:DetachRolePolicy"
-            - "iam:GetInstanceProfile"
-            - "iam:GetPolicy"
-            - "iam:GetRole"
-            - "iam:GetRolePolicy"
-            - "iam:ListAttachedRolePolicies"
-            - "iam:ListInstanceProfiles"
-            - "iam:ListInstanceProfilesForRole"
-            - "iam:ListRolePolicies"
-            - "iam:ListRoles"
-            - "iam:PassRole"
-            - "iam:PutRolePolicy"
-            - "iam:RemoveRoleFromInstanceProfile"
+            - 'iam:AddRoleToInstanceProfile'
+            - 'iam:AttachRolePolicy'
+            - 'iam:CreateInstanceProfile'
+            - 'iam:CreatePolicy'
+            - 'iam:CreateRole'
+            - 'iam:CreateServiceLinkedRole'
+            - 'iam:DeleteInstanceProfile'
+            - 'iam:DeletePolicy'
+            - 'iam:DeleteRole'
+            - 'iam:DeleteRolePolicy'
+            - 'iam:DetachRolePolicy'
+            - 'iam:GetInstanceProfile'
+            - 'iam:GetPolicy'
+            - 'iam:GetRole'
+            - 'iam:GetRolePolicy'
+            - 'iam:ListAttachedRolePolicies'
+            - 'iam:ListInstanceProfiles'
+            - 'iam:ListInstanceProfilesForRole'
+            - 'iam:ListRolePolicies'
+            - 'iam:ListRoles'
+            - 'iam:PassRole'
+            - 'iam:PutRolePolicy'
+            - 'iam:RemoveRoleFromInstanceProfile'
             Resource:
             - !Sub 'arn:aws:iam::${AWS::AccountId}:role/SB-OpSec'
           -
-            Effect: "Allow"
+            Effect: 'Allow'
             Action:
-            - "cloudwatch:DeleteAlarms"
-            - "cloudwatch:DescribeAlarms"
-            - "cloudwatch:DescribeAlarmsForMetric"
-            - "cloudwatch:GetMetricStatistics"
-            - "cloudwatch:ListMetrics"
-            - "cloudwatch:PutMetricAlarm"
-            - "cloudwatch:PutMetricData"
-            - "ssm:DescribeParameters"
-            - "logs:CreateLogGroup"
-            - "logs:CreateLogStream"
-            - "logs:DeleteLogGroup"
-            - "logs:DeleteLogStream"
-            - "logs:DescribeLogGroups"
-            - "logs:DescribeLogStreams"
-            - "logs:GetLogEvents"
-            - "logs:ListTagsLogGroup"
-            - "logs:PutDestination"
-            - "logs:PutLogEvents"
-            - "logs:TagLogGroup"
-            - "lambda:*"
-            - "events:*"
+            - 'cloudwatch:DeleteAlarms'
+            - 'cloudwatch:DescribeAlarms'
+            - 'cloudwatch:DescribeAlarmsForMetric'
+            - 'cloudwatch:GetMetricStatistics'
+            - 'cloudwatch:ListMetrics'
+            - 'cloudwatch:PutMetricAlarm'
+            - 'cloudwatch:PutMetricData'
+            - 'ssm:DescribeParameters'
+            - 'logs:CreateLogGroup'
+            - 'logs:CreateLogStream'
+            - 'logs:DeleteLogGroup'
+            - 'logs:DeleteLogStream'
+            - 'logs:DescribeLogGroups'
+            - 'logs:DescribeLogStreams'
+            - 'logs:GetLogEvents'
+            - 'logs:ListTagsLogGroup'
+            - 'logs:PutDestination'
+            - 'logs:PutLogEvents'
+            - 'logs:TagLogGroup'
+            - 'lambda:*'
+            - 'events:*'
             Resource:
-            - "*"
+            - '*'
   MasterProject:
     Type: 'AWS::CodeBuild::Project'
     Properties:
@@ -326,7 +342,7 @@ Resources:
             TemplateConfiguration: BuildArtifact::operations/configs/opsec.json
             ParameterOverrides: !Sub |
               {
-                "ArtifactStoreS3": "${ArtifactStoreS3}"
+                'ArtifactStoreS3': '${ArtifactStoreS3}'
               }
           RunOrder: 1
         - Name: SlackChangeSet
@@ -349,7 +365,7 @@ Resources:
             TemplateConfiguration: BuildArtifact::operations/configs/slack.json
             ParameterOverrides: !Sub |
               {
-                "LambdaStoreS3": "${TemplateStoreS3}"
+                'LambdaStoreS3': '${TemplateStoreS3}'
               }
           RunOrder: 1
 
