@@ -342,7 +342,7 @@ Resources:
             TemplateConfiguration: BuildArtifact::operations/configs/opsec.json
             ParameterOverrides: !Sub |
               {
-                'ArtifactStoreS3': '${ArtifactStoreS3}'
+                "ArtifactStoreS3": "${ArtifactStoreS3}"
               }
           RunOrder: 1
         - Name: SlackChangeSet
@@ -365,7 +365,7 @@ Resources:
             TemplateConfiguration: BuildArtifact::operations/configs/slack.json
             ParameterOverrides: !Sub |
               {
-                'LambdaStoreS3': '${TemplateStoreS3}'
+                "LambdaStoreS3": "${TemplateStoreS3}"
               }
           RunOrder: 1
 

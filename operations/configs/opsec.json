@@ -1,6 +1,6 @@
 {
   "Parameters": {
-    "ArtifactStore": "",
+    "ArtifactStoreS3": "",
     "FallbackEmail": "fred@red7mobile.com"
   }
 }
