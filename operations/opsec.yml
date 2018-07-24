@@ -302,12 +302,6 @@ Resources:
             - "*"
 
 Outputs:
-  TemplateVersion:
-    Description: 'template version.'
-    Value: '__VERSION__'
-  StackName:
-    Description: 'Stack name.'
-    Value: !Sub '${AWS::StackName}'
   TopicARN:
     Description: 'The ARN of the alert topic.'
     Value: !Ref Topic

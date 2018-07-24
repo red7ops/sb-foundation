@@ -1,5 +1,5 @@
 AWSTemplateFormatVersion: '2010-09-09'
-Description: 'Foundations: Master for laying the foundations of of SportsBook.'
+Description: 'Foundations: Master for laying the foundations of SportsBook.'
 Metadata:
   'AWS::CloudFormation::Interface':
     ParameterGroups:
@@ -86,6 +86,12 @@ Resources:
             Resource:
             - !Sub 'arn:aws:codebuild:${AWS::Region}:${AWS::AccountId}:project/${AWS::StackName}-MasterProject'
             - !Sub 'arn:aws:codebuild:${AWS::Region}:${AWS::AccountId}:build/${AWS::StackName}-MasterProject:*'
+          -
+            Effect: "Allow"
+            Action:
+            - "iam:PassRole"
+            Resource:
+            - !Sub 'arn:aws:iam::${AWS::AccountId}:role/${AWS::StackName}-CloudFormationRole'
   CodeBuildRole:
     Type: 'AWS::IAM::Role'
     Properties:
@@ -158,6 +164,107 @@ Resources:
             - 'codecommit:GitPush'
             Resource:
             - !Sub 'arn:aws:codecommit:${AWS::Region}:${AWS::AccountId}:${SourceRepo}'
+  CloudFormationRole:
+    Type: 'AWS::IAM::Role'
+    Properties:
+      RoleName: !Sub '${AWS::StackName}-CloudFormationRole'
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+        -
+          Effect: "Allow"
+          Principal:
+            Service:
+            - "cloudformation.amazonaws.com"
+          Action:
+          - "sts:AssumeRole"
+      Path: /
+      Policies:
+      -
+        PolicyName: "CloudFormationAccessPolicy"
+        PolicyDocument:
+          Version: "2012-10-17"
+          Statement:
+          -
+            Effect: "Allow"
+            Action:
+            - "iam:AddRoleToInstanceProfile"
+            - "iam:AttachRolePolicy"
+            - "iam:CreateInstanceProfile"
+            - "iam:CreatePolicy"
+            - "iam:CreateRole"
+            - "iam:CreateServiceLinkedRole"
+            - "iam:DeleteInstanceProfile"
+            - "iam:DeletePolicy"
+            - "iam:DeleteRole"
+            - "iam:DeleteRolePolicy"
+            - "iam:DetachRolePolicy"
+            - "iam:GetInstanceProfile"
+            - "iam:GetPolicy"
+            - "iam:GetRole"
+            - "iam:GetRolePolicy"
+            - "iam:ListAttachedRolePolicies"
+            - "iam:ListInstanceProfiles"
+            - "iam:ListInstanceProfilesForRole"
+            - "iam:ListRolePolicies"
+            - "iam:ListRoles"
+            - "iam:PassRole"
+            - "iam:PutRolePolicy"
+            - "iam:RemoveRoleFromInstanceProfile"
+            Resource:
+            - !Sub 'arn:aws:iam::${AWS::AccountId}:role/SB-OpSec'
+          -
+            Effect: "Allow"
+            Action:
+            - "cloudwatch:DeleteAlarms"
+            - "cloudwatch:DescribeAlarms"
+            - "cloudwatch:DescribeAlarmsForMetric"
+            - "cloudwatch:GetMetricStatistics"
+            - "cloudwatch:ListMetrics"
+            - "cloudwatch:PutMetricAlarm"
+            - "cloudwatch:PutMetricData"
+            - "ssm:DescribeParameters"
+            - "logs:CreateLogGroup"
+            - "logs:CreateLogStream"
+            - "logs:DeleteLogGroup"
+            - "logs:DeleteLogStream"
+            - "logs:DescribeLogGroups"
+            - "logs:DescribeLogStreams"
+            - "logs:GetLogEvents"
+            - "logs:ListTagsLogGroup"
+            - "logs:PutDestination"
+            - "logs:PutLogEvents"
+            - "logs:TagLogGroup"
+            - "lambda:*"
+            - "events:*"
+            Resource:
+            - "*"
+  MasterProject:
+    Type: 'AWS::CodeBuild::Project'
+    Properties:
+      Name: !Sub '${AWS::StackName}-MasterProject'
+      Description: 'Validate, parse and store operations and templates'
+      ServiceRole: !GetAtt CodeBuildRole.Arn
+      Artifacts:
+        Type: CODEPIPELINE
+      Environment:
+        Type: LINUX_CONTAINER
+        ComputeType: BUILD_GENERAL1_SMALL
+        Image: aws/codebuild/python:3.6.5
+        EnvironmentVariables:
+        - Name: TEMPLATE_BUCKET
+          Value: !Ref TemplateStoreS3
+      Source:
+        Type: CODEPIPELINE
+      TimeoutInMinutes: 10
+      EncryptionKey: !Sub 'arn:aws:kms:${AWS::Region}:${AWS::AccountId}:alias/aws/s3'
+      Tags:
+      - Key: Name
+        Value: !Sub '${AWS::StackName}-MasterProject'
+      - Key: Group
+        Value: 'Scoreboards Fixed'
+      - Key: Client
+        Value: 'Internal'
   MasterPipeline:
     Type: 'AWS::CodePipeline::Pipeline'
     Properties:
@@ -197,34 +304,55 @@ Resources:
           Configuration:
             ProjectName: !Ref MasterProject
           RunOrder: 1
-  MasterProject:
-    Type: 'AWS::CodeBuild::Project'
-    Properties:
-      Name: !Sub '${AWS::StackName}-MasterProject'
-      Description: 'Validate, parse and store operations and templates'
-      ServiceRole: !GetAtt CodeBuildRole.Arn
-      Artifacts:
-        Type: CODEPIPELINE
-      Environment:
-        Type: LINUX_CONTAINER
-        ComputeType: BUILD_GENERAL1_SMALL
-        Image: aws/codebuild/python:3.6.5
-        EnvironmentVariables:
-        - Name: TEMPLATE_BUCKET
-          Value: !Ref TemplateStoreS3
-        - Name: TEMPLATE_PREFIX
-          Value: !Ref AWS::StackName
-      Source:
-        Type: CODEPIPELINE
-      TimeoutInMinutes: 10
-      EncryptionKey: !Sub 'arn:aws:kms:${AWS::Region}:${AWS::AccountId}:alias/aws/s3'
-      Tags:
-      - Key: Name
-        Value: !Sub '${AWS::StackName}-MasterProject'
-      - Key: Group
-        Value: 'Scoreboards Fixed'
-      - Key: Client
-        Value: 'Internal'
+      - Name: Deploy
+        Actions:
+        - Name: OpSecChangeSet
+          InputArtifacts:
+          - Name: BuildArtifact
+          ActionTypeId:
+            Category: Deploy
+            Owner: AWS
+            Version: 1
+            Provider: CloudFormation
+          OutputArtifacts:
+          - Name: CreatedOpSecChangeSet
+          Configuration:
+            ActionMode: CHANGE_SET_REPLACE
+            ChangeSetName: OpSecChangeSet
+            RoleArn: !GetAtt CloudFormationRole.Arn
+            Capabilities: CAPABILITY_NAMED_IAM
+            StackName: 'SB-OpSec'
+            TemplatePath: BuildArtifact::operations/opsec.yml
+            TemplateConfiguration: BuildArtifact::operations/configs/opsec.json
+            ParameterOverrides: !Sub |
+              {
+                "ArtifactStoreS3": "${ArtifactStoreS3}"
+              }
+          RunOrder: 1
+        - Name: SlackChangeSet
+          InputArtifacts:
+          - Name: BuildArtifact
+          ActionTypeId:
+            Category: Deploy
+            Owner: AWS
+            Version: 1
+            Provider: CloudFormation
+          OutputArtifacts:
+          - Name: CreatedSlackChangeSet
+          Configuration:
+            ActionMode: CHANGE_SET_REPLACE
+            ChangeSetName: SlackChangeSet
+            RoleArn: !GetAtt CloudFormationRole.Arn
+            Capabilities: CAPABILITY_NAMED_IAM
+            StackName: 'SB-Slack'
+            TemplatePath: BuildArtifact::operations/slack.yml
+            TemplateConfiguration: BuildArtifact::operations/configs/slack.json
+            ParameterOverrides: !Sub |
+              {
+                "LambdaStoreS3": "${TemplateStoreS3}"
+              }
+          RunOrder: 1
+
 Outputs:
   Pipeline:
     Description: URL of master pipeline.
