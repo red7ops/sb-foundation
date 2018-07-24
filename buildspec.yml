@@ -3,8 +3,6 @@ version: 0.2
 env:
   variables:
     OPS: operations
-    SCRIPTS: |
-      operations/scripts/lambda.js
 
 phases:
   install:
@@ -26,13 +24,8 @@ phases:
       done
   build:
     commands:
-    - ls operations
-    - ls operations/scripts
     - echo "Copying scripts to S3"
-    - |
-      for script in "$SCRIPTS"; do
-        aws s3 cp "$script" "s3://$TEMPLATE_BUCKET/$script"
-      done
+    - aws s3 cp "$OPS/scripts" "s3://$TEMPLATE_BUCKET/" --recursive
     - echo "Building templates..."
 
 artifacts:
