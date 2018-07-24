@@ -26,6 +26,7 @@ phases:
       done
   build:
     commands:
+    - ls -la
     - echo "Copying scripts to S3"
     - |
       for script in "$SCRIPTS"; do
