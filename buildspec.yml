@@ -26,10 +26,12 @@ phases:
       done
   build:
     commands:
+    - ls operations
+    - ls operations/scripts
     - echo "Copying scripts to S3"
     - |
       for script in "$SCRIPTS"; do
-        aws s3 cp "./$script" "s3://$TEMPLATE_BUCKET/$script"
+        aws s3 cp "$script" "s3://$TEMPLATE_BUCKET/$script"
       done
     - echo "Building templates..."
 
