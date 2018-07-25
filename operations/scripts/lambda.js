@@ -47,7 +47,8 @@ var util = require('util');
  * @property {string} [channel]
  * @property {string} [state]
  * @property {string} [link]
- * @property {string} [command]
+ * @property {string} [stream]
+ * @property {string} [group]
  * @property {Object} [approval]
  * @property {string} [approval.pipelineName]
  * @property {string} [approval.approvalReviewLink]
@@ -257,6 +258,11 @@ function setData(msgObj, data)
         // }
 }
 
+/**
+ *
+ * @param {MessageObject} msgObj
+ * @param {DataObject} data
+ */
 function addAttachments(msgObj, data)
 {
     switch (msgObj.type)
@@ -299,7 +305,7 @@ function addAttachments(msgObj, data)
                         },
                         {
                             "title": "CLI command",
-                            "value": msgObj.command,
+                            "value": util.format("aws --query events[*].message --output text logs filter-log-events --log-group-name %s --log-stream-names %s", msgObj.group, msgObj.stream),
                             "short": false
                         }
                     ]
@@ -326,7 +332,7 @@ function addAttachments(msgObj, data)
                         "fields": [
                             {
                                 "title": "Pipeline",
-                                "value": util.format("<%s|Click to View>", msgObj.link)
+                                "value": util.format("<%s|Click to View>", "https://console.aws.amazon.com/codepipeline/home?region=eu-west-1#/view/" + msgObj.pipeline)
                             }
                         ]
                     }
