@@ -201,8 +201,7 @@ Resources:
         PolicyDocument:
           Version: '2012-10-17'
           Statement:
-          -
-            Effect: 'Allow'
+          - Effect: 'Allow'
             Action:
             - 'iam:AddRoleToInstanceProfile'
             - 'iam:AttachRolePolicy'
@@ -228,12 +227,9 @@ Resources:
             - 'iam:PutRolePolicy'
             - 'iam:RemoveRoleFromInstanceProfile'
             Resource:
-            - !Sub 'arn:aws:iam::${AWS::AccountId}:role/SB-OpSec'
             - !Sub 'arn:aws:iam::${AWS::AccountId}:role/SB-OpSec-*'
-            - !Sub 'arn:aws:iam::${AWS::AccountId}:role/SB-Slack'
             - !Sub 'arn:aws:iam::${AWS::AccountId}:role/SB-Slack-*'
-          -
-            Effect: 'Allow'
+          - Effect: 'Allow'
             Action:
             - 'cloudwatch:DeleteAlarms'
             - 'cloudwatch:DescribeAlarms'
@@ -258,6 +254,13 @@ Resources:
             - 'events:*'
             Resource:
             - '*'
+          - Effect: "Allow"
+            Action:
+            - "s3:GetObject"
+            - "s3:ListBucket"
+            Resource:
+            - !Sub 'arn:aws:s3:::${TemplateStoreS3}'
+            - !Sub 'arn:aws:s3:::${TemplateStoreS3}/*'
   MasterProject:
     Type: 'AWS::CodeBuild::Project'
     Properties:
