@@ -24,8 +24,10 @@ phases:
       done
   build:
     commands:
-    - echo "Copying scripts to S3"
-    - aws s3 cp "$OPS/scripts" "s3://$TEMPLATE_BUCKET/scripts/" --recursive
+    - echo "Zipping lambda to S3"
+    - |
+      zip lambda.zip operations/scripts/lambda.js
+      aws s3 cp "lambda.zip" "s3://$TEMPLATE_BUCKET/scripts/lambda.zip"
     - echo "Building templates..."
 
 artifacts:
