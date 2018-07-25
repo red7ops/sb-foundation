@@ -10,6 +10,7 @@ phases:
     - pip install --upgrade pip
     - pip install yamllint
     - pip install demjson
+    - pip install zip
   pre_build:
     commands:
     - yamllint .
