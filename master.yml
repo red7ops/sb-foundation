@@ -229,6 +229,9 @@ Resources:
             - 'iam:RemoveRoleFromInstanceProfile'
             Resource:
             - !Sub 'arn:aws:iam::${AWS::AccountId}:role/SB-OpSec'
+            - !Sub 'arn:aws:iam::${AWS::AccountId}:role/SB-OpSec-*'
+            - !Sub 'arn:aws:iam::${AWS::AccountId}:role/SB-Slack'
+            - !Sub 'arn:aws:iam::${AWS::AccountId}:role/SB-Slack-*'
           -
             Effect: 'Allow'
             Action:
@@ -368,6 +371,32 @@ Resources:
                 "LambdaStoreS3": "${TemplateStoreS3}"
               }
           RunOrder: 1
+        - Name: OpSecExecute
+          InputArtifacts:
+          - Name: CreatedOpSecChangeSet
+          ActionTypeId:
+            Category: Deploy
+            Owner: AWS
+            Version: 1
+            Provider: CloudFormation
+          Configuration:
+            ActionMode: CHANGE_SET_EXECUTE
+            ChangeSetName: OpSecChangeSet
+            StackName: 'SB-OpSec'
+          RunOrder: 2
+        - Name: SlackExecute
+          InputArtifacts:
+          - Name: CreatedSlackChangeSet
+          ActionTypeId:
+            Category: Deploy
+            Owner: AWS
+            Version: 1
+            Provider: CloudFormation
+          Configuration:
+            ActionMode: CHANGE_SET_EXECUTE
+            ChangeSetName: SlackChangeSet
+            StackName: 'SB-Slack'
+          RunOrder: 2
 
 Outputs:
   Pipeline:
