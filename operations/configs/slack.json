@@ -1,6 +1,6 @@
 {
   "Parameters": {
-    "LambdaLocation": "operations/scripts/lambda.zip",
+    "LambdaLocation": "scripts/lambda.zip",
     "LambdaStoreS3": "",
     "ParentAlertStack": "SB-OpSec",
     "SlackEndpoint": "TAQA40E5D/BAP8TN2N6/LeogcH7RfK7xTqVTJPeODiCF"
