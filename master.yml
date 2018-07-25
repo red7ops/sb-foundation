@@ -227,7 +227,9 @@ Resources:
             - 'iam:PutRolePolicy'
             - 'iam:RemoveRoleFromInstanceProfile'
             Resource:
+            - !Sub 'arn:aws:iam::${AWS::AccountId}:role/SB-OpSec'
             - !Sub 'arn:aws:iam::${AWS::AccountId}:role/SB-OpSec-*'
+            - !Sub 'arn:aws:iam::${AWS::AccountId}:role/SB-Slack'
             - !Sub 'arn:aws:iam::${AWS::AccountId}:role/SB-Slack-*'
           - Effect: 'Allow'
             Action:
