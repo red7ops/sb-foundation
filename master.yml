@@ -227,9 +227,7 @@ Resources:
             - 'iam:PutRolePolicy'
             - 'iam:RemoveRoleFromInstanceProfile'
             Resource:
-            - !Sub 'arn:aws:iam::${AWS::AccountId}:role/SB-OpSec'
-            - !Sub 'arn:aws:iam::${AWS::AccountId}:role/SB-OpSec-*'
-            - !Sub 'arn:aws:iam::${AWS::AccountId}:role/SB-Slack'
+            - !Sub 'arn:aws:iam::${AWS::AccountId}:role/${AWS::StackName}-*'
             - !Sub 'arn:aws:iam::${AWS::AccountId}:role/SB-Slack-*'
           - Effect: 'Allow'
             Action:
@@ -263,6 +261,11 @@ Resources:
             Resource:
             - !Sub 'arn:aws:s3:::${TemplateStoreS3}'
             - !Sub 'arn:aws:s3:::${TemplateStoreS3}/*'
+          - Effect: "Allow"
+            Action:
+            - "sns:ListSubscriptionByTopic"
+            Resource:
+            - !Sub 'arn:aws:sns:${AWS::Region}:${AWS::AccountId}:SB-OpSec-*'
   MasterProject:
     Type: 'AWS::CodeBuild::Project'
     Properties:
@@ -389,19 +392,19 @@ Resources:
             ChangeSetName: OpSecChangeSet
             StackName: 'SB-OpSec'
           RunOrder: 2
-#        - Name: SlackExecute
-#          InputArtifacts:
-#          - Name: CreatedSlackChangeSet
-#          ActionTypeId:
-#            Category: Deploy
-#            Owner: AWS
-#            Version: 1
-#            Provider: CloudFormation
-#          Configuration:
-#            ActionMode: CHANGE_SET_EXECUTE
-#            ChangeSetName: SlackChangeSet
-#            StackName: 'SB-Slack'
-#          RunOrder: 2
+        - Name: SlackExecute
+          InputArtifacts:
+          - Name: CreatedSlackChangeSet
+          ActionTypeId:
+            Category: Deploy
+            Owner: AWS
+            Version: 1
+            Provider: CloudFormation
+          Configuration:
+            ActionMode: CHANGE_SET_EXECUTE
+            ChangeSetName: SlackChangeSet
+            StackName: 'SB-Slack'
+          RunOrder: 2
 
 Outputs:
   Pipeline:
