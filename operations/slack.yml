@@ -60,8 +60,8 @@ Resources:
   SnsToSlack:
     Type: 'AWS::Lambda::Function'
     Properties:
-      Handler: lambda.handler
-      Timeout: 25
+      Handler: index.handler
+      Timeout: 15
       TracingConfig:
         Mode: PassThrough
       Role: !GetAtt SlackExecutionRole.Arn
