@@ -264,6 +264,7 @@ Resources:
           - Effect: "Allow"
             Action:
             - "sns:ListSubscriptionByTopic"
+            - "sns:Subscribe"
             Resource:
             - !Sub 'arn:aws:sns:${AWS::Region}:${AWS::AccountId}:SB-OpSec-*'
   MasterProject:
@@ -292,6 +293,7 @@ Resources:
         Value: 'Scoreboards Fixed'
       - Key: Client
         Value: 'Internal'
+# TODO project for npm install and zip?
   MasterPipeline:
     Type: 'AWS::CodePipeline::Pipeline'
     Properties:
