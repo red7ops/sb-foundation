@@ -263,8 +263,9 @@ Resources:
             - !Sub 'arn:aws:s3:::${TemplateStoreS3}/*'
           - Effect: "Allow"
             Action:
-            - "sns:ListSubscriptionByTopic"
+            - "sns:ListSubscriptionsByTopic"
             - "sns:Subscribe"
+            - "sns:Unsubscribe"
             Resource:
             - !Sub 'arn:aws:sns:${AWS::Region}:${AWS::AccountId}:SB-OpSec-*'
   MasterProject:
