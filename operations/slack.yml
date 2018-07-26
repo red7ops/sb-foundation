@@ -50,33 +50,33 @@ Resources:
             Action:
             - "logs:*"
             Resource: "arn:aws:logs:*:*:*"
-  LambdaEndpointSubscription:
-    Type: 'AWS::SNS::Subscription'
-    Properties:
-      Endpoint: !GetAtt SnsToSlack.Arn
-      Protocol: lambda
-      TopicArn:
-        'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'
-  SnsToSlack:
-    Type: 'AWS::Lambda::Function'
-    Properties:
-      Handler: lambda.handler
-      Timeout: 15
-      TracingConfig:
-        Mode: PassThrough
-      Role: !GetAtt SlackExecutionRole.Arn
-      Runtime: nodejs6.10
-      Code:
-        S3Bucket: !Ref LambdaStoreS3
-        S3Key: !Ref LambdaLocation
-  LambdaInvokePermission:
-    Type: 'AWS::Lambda::Permission'
-    Properties:
-      Action: lambda:InvokeFunction
-      Principal: sns.amazonaws.com
-      SourceArn:
-        'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'
-      FunctionName: !GetAtt SnsToSlack.Arn
+#  LambdaEndpointSubscription:
+#    Type: 'AWS::SNS::Subscription'
+#    Properties:
+#      Endpoint: !GetAtt SnsToSlack.Arn
+#      Protocol: lambda
+#      TopicArn:
+#        'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'
+#  SnsToSlack:
+#    Type: 'AWS::Lambda::Function'
+#    Properties:
+#      Handler: lambda.handler
+#      Timeout: 15
+#      TracingConfig:
+#        Mode: PassThrough
+#      Role: !GetAtt SlackExecutionRole.Arn
+#      Runtime: nodejs6.10
+#      Code:
+#        S3Bucket: !Ref LambdaStoreS3
+#        S3Key: !Ref LambdaLocation
+#  LambdaInvokePermission:
+#    Type: 'AWS::Lambda::Permission'
+#    Properties:
+#      Action: lambda:InvokeFunction
+#      Principal: sns.amazonaws.com
+#      SourceArn:
+#        'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'
+#      FunctionName: !GetAtt SnsToSlack.Arn
 Outputs:
   Pipeline:
     Description: URL of slack.
