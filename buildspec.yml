@@ -24,9 +24,8 @@ phases:
       done
   build:
     commands:
-    - echo "Zipping lambda to S3"
-    - tar -cvf lambda.zip operations/scripts/lambda
-    - aws s3 cp "lambda.zip" "s3://$TEMPLATE_BUCKET/scripts/lambda.zip"
+    - echo "Copy lambda to S3"
+    - aws s3 cp "operations/scripts/lambda.zip" "s3://$TEMPLATE_BUCKET/scripts/lambda.zip"
     - echo "Building templates..."
 
 artifacts:
