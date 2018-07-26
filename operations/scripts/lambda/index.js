@@ -112,6 +112,18 @@ exports.handler = function(event, context, callback) {
         attachments: []
     };
 
+    var req = https.request(options, function(res) {
+        res.setEncoding('utf8');
+        res.on('data', function () {
+            cb(null, "Success");
+        });
+    });
+
+    req.on('error', function(e) {
+        console.log('problem with request: ' + e.message);
+        cb(e);
+    });
+
     /**
      * Message Object
      * @type {MessageObject}
@@ -121,7 +133,8 @@ exports.handler = function(event, context, callback) {
     setData(msgObj, postData);
     addAttachments(msgObj, postData);
 
-    createRequest(options, postData, callback);
+    req.write(util.format("%j", postData));
+    req.end();
 };
 
 /**
@@ -140,30 +153,6 @@ function parseJson (json, cb) {
     }
 
     return parsed
-}
-
-/**
- * Request maker
- * @param {Object} options
- * @param {DataObject} data
- * @param {HandlerCallback} cb
- */
-function createRequest(options, data, cb)
-{
-    var req = https.request(options, function(res) {
-        res.setEncoding('utf8');
-        res.on('data', function (chunk) {
-            cb(null, "Success");
-        });
-    });
-
-    req.on('error', function(e) {
-        console.log('problem with request: ' + e.message);
-        cb(e);
-    });
-
-    req.write(util.format("%j", data));
-    req.end();
 }
 
 /**
