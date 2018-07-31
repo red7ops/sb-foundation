@@ -118,10 +118,13 @@ exports.handler = function(event, context, callback) {
      */
     var msgObj = createMessageObject(event.Records[0].Sns.Message, callback);
 
+    console.log("after msgObj");
+
     /**
      * Request
      */
     var req = https.request(options, function(res) {
+        console.log('StatusCode', res.statusCode);
         res.setEncoding('utf8');
         res.on('data', function () {
             console.log("data");
@@ -132,6 +135,8 @@ exports.handler = function(event, context, callback) {
             callback(null, "End Success");
         });
     });
+
+    console.log("after request");
 
     /**
      *
@@ -146,6 +151,8 @@ exports.handler = function(event, context, callback) {
 
     req.write(util.format("%j", postData));
     req.end();
+
+    console.log("after req.end()");
 };
 
 /**
