@@ -86,8 +86,7 @@ var util = require('util');
  * @param {HandlerCallback} cb
  * @returns {MessageObject}
  */
-function parseJson(json, cb)
-{
+function parseJson(json, cb) {
     'use strict';
     var parsed;
 
@@ -105,8 +104,7 @@ function parseJson(json, cb)
  * @param {string} state
  * @returns {string}
  */
-function getColour(state)
-{
+function getColour(state) {
     'use strict';
     switch(state) {
         case "FAILED":
@@ -135,8 +133,7 @@ function getColour(state)
  * @param {HandlerCallback} cb
  * @returns {MessageObject}
  */
-function createMessageObject(message, cb)
-{
+function createMessageObject(message, cb) {
     'use strict';
     /**
      * Message Object
@@ -181,8 +178,7 @@ function createMessageObject(message, cb)
  * @param {MessageObject} msgObj
  * @param {DataObject} data
  */
-function setData(msgObj, data)
-{
+function setData(msgObj, data) {
     'use strict';
     switch (msgObj.type)
     {
@@ -231,8 +227,7 @@ function setData(msgObj, data)
  * @param {MessageObject} msgObj
  * @param {DataObject} data
  */
-function addAttachments(msgObj, data)
-{
+function addAttachments(msgObj, data) {
     'use strict';
     switch (msgObj.type)
     {

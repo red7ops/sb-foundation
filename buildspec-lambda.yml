@@ -7,11 +7,11 @@ env:
 phases:
   install:
     commands:
-    - npm install jslint -g
+    - npm install jshint -g
   pre_build:
     commands:
     - cd $LAMBDA
-    - jslint index.js
+    - jshint index.js
     - npm install
     - ls -la
     - zip lambda.zip .
