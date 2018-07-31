@@ -85,7 +85,7 @@ Resources:
             - 'cloudformation:CreateStack'
             - 'cloudformation:CreateUploadBucket'
             - 'cloudformation:DeleteChangeSet'
-#            - 'cloudformation:DeleteStack'
+#           - 'cloudformation:DeleteStack'
             - 'cloudformation:Describe*'
             - 'cloudformation:List*'
             - 'cloudformation:UpdateStack'

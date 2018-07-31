@@ -81,89 +81,12 @@ var util = require('util');
  */
 
 /**
- * Main
- * @param {SnsEvent} event
- * @param {Object} context
- * @param {HandlerCallback} callback
- */
-exports.handler = function(event, context, callback) {
-    console.log(JSON.stringify(event, null, 2));
-    console.log('From SNS: ', event.Records[0].Sns.Message);
-
-    /**
-     * Request Options
-     * @type {{}}
-     */
-    var options = {
-        method: 'POST',
-        hostname: 'hooks.slack.com',
-        port: 443,
-        path: '/services/${SlackEndpoint}'
-    };
-
-    /**
-     * postData
-     * @type {DataObject}
-     */
-    var postData = {
-        channel: "scoreboard-sns",
-        username: "AWS SNS via Lambda :: Ops",
-        text: event.Records[0].Sns.Subject,
-        attachments: []
-    };
-
-    /**
-     * Message Object
-     * @type {MessageObject}
-     */
-    var msgObj = createMessageObject(event.Records[0].Sns.Message, callback);
-
-    console.log("after msgObj");
-
-    /**
-     * Request
-     */
-    var req = https.request(options, function(res) {
-        console.log('StatusCode', res.statusCode);
-        res.setEncoding('utf8');
-        res.on('data', function () {
-            console.log("data");
-            callback(null, "Data Success");
-        });
-        res.on('end', function () {
-            console.log("end");
-            callback(null, "End Success");
-        });
-    });
-
-    console.log("after request");
-
-    /**
-     *
-     */
-    req.on('error', function(e) {
-        console.log('problem with request: ' + e.message);
-        callback(e);
-    });
-
-    setData(msgObj, postData);
-    addAttachments(msgObj, postData);
-
-    console.log('Data before write: ', util.format("%j", postData));
-
-    req.write(util.format("%j", postData));
-    req.end();
-
-    console.log("after req.end()");
-};
-
-/**
  * Safe JSON parser
  * @param {string} json
  * @param {HandlerCallback} cb
  * @returns {MessageObject}
  */
-function parseJson (json, cb) {
+function parseJson(json, cb) {
     var parsed;
 
     try {
@@ -391,3 +314,76 @@ function getColour(state)
 
     return "good";
 }
+
+/**
+ * Main
+ * @param {SnsEvent} event
+ * @param {Object} context
+ * @param {HandlerCallback} callback
+ */
+exports.handler = function(event, context, callback) {
+    'use strict';
+    console.log(JSON.stringify(event, null, 2));
+    console.log('From SNS: ', event.Records[0].Sns.Message);
+
+    /**
+     * Request Options
+     * @type {{}}
+     */
+    var options = {
+            method: 'POST',
+            hostname: 'hooks.slack.com',
+            port: 443,
+            path: '/services/${SlackEndpoint}'
+        },
+
+        /**
+         * postData
+         * @type {DataObject}
+         */
+        postData = {
+            channel: "scoreboard-sns",
+            username: "AWS SNS via Lambda :: Ops",
+            text: event.Records[0].Sns.Subject,
+            attachments: []
+        },
+
+        req = https.request(options, function(res) {
+            console.log('StatusCode', res.statusCode);
+            res.setEncoding('utf8');
+            res.on('data', function () {
+                console.log("data");
+                callback(null, "Data Success");
+            });
+            res.on('end', function () {
+                console.log("end");
+                callback(null, "End Success");
+            });
+        }),
+
+        /**
+         * Message Object
+         * @type {MessageObject}
+         */
+        msgObj = createMessageObject(event.Records[0].Sns.Message, callback);
+
+    console.log("after msgObj");
+
+    /**
+     *
+     */
+    req.on('error', function(e) {
+        console.log('problem with request: ' + e.message);
+        callback(e);
+    });
+
+    setData(msgObj, postData);
+    addAttachments(msgObj, postData);
+
+    console.log('Data before write: ', util.format("%j", postData));
+
+    req.write(util.format("%j", postData));
+    req.end();
+
+    console.log("after req.end()");
+};
