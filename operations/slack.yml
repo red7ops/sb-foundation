@@ -92,6 +92,7 @@ Resources:
           var AWS = require('aws-sdk');
           var lambda = new AWS.Lambda();
           exports.handler = function(event, context) {
+              var key, bucket, version;
               key = event.Records[0].s3.object.key
               bucket = event.Records[0].s3.bucket.name
               version = event.Records[0].s3.object.versionId
@@ -117,6 +118,13 @@ Resources:
                   context.succeed("skipping zip " + key + " in bucket " + bucket + " with version " + version);
               }
             };
+  LambdaDeployerInvokePermission:
+    Type: 'AWS::Lambda::Permission'
+    Properties:
+      Action: lambda:InvokeFunction
+      Principal: s3.amazonaws.com
+      SourceArn: !Sub 'arn:aws:s3:::${LambdaStoreS3}'
+      FunctionName: !GetAtt SnsToSlack.Arn
 Outputs:
   Pipeline:
     Description: URL of slack.
