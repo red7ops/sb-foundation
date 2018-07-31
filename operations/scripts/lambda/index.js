@@ -112,23 +112,32 @@ exports.handler = function(event, context, callback) {
         attachments: []
     };
 
-    var req = https.request(options, function(res) {
-        res.setEncoding('utf8');
-        res.on('end', function () {
-            cb(null, "Success");
-        });
-    });
-
-    req.on('error', function(e) {
-        console.log('problem with request: ' + e.message);
-        cb(e);
-    });
-
     /**
      * Message Object
      * @type {MessageObject}
      */
     var msgObj = createMessageObject(event.Records[0].Sns.Message, callback);
+
+    /**
+     * Request
+     */
+    var req = https.request(options, function(res) {
+        res.setEncoding('utf8');
+        res.on('data', function () {
+            callback(null, "Data Success");
+        });
+        res.on('end', function () {
+            callback(null, "End Success");
+        });
+    });
+
+    /**
+     *
+     */
+    req.on('error', function(e) {
+        console.log('problem with request: ' + e.message);
+        callback(e);
+    });
 
     setData(msgObj, postData);
     addAttachments(msgObj, postData);
