@@ -124,9 +124,11 @@ exports.handler = function(event, context, callback) {
     var req = https.request(options, function(res) {
         res.setEncoding('utf8');
         res.on('data', function () {
+            console.log("data");
             callback(null, "Data Success");
         });
         res.on('end', function () {
+            console.log("end");
             callback(null, "End Success");
         });
     });
