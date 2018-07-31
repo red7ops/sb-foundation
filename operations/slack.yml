@@ -50,6 +50,10 @@ Resources:
             Action:
             - "logs:*"
             Resource: "arn:aws:logs:*:*:*"
+          - Effect: Allow
+            Action:
+            - "lambda:UpdateFunctionCode"
+            Resource: !Sub "arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:*"
   LambdaEndpointSubscription:
     Type: 'AWS::SNS::Subscription'
     Properties:
@@ -88,7 +92,6 @@ Resources:
       Runtime: nodejs6.10
       Code:
         ZipFile: !Sub |
-          console.log('Loading function');
           var AWS = require('aws-sdk');
           var lambda = new AWS.Lambda();
           exports.handler = function(event, context) {
@@ -118,13 +121,14 @@ Resources:
                   context.succeed("skipping zip " + key + " in bucket " + bucket + " with version " + version);
               }
             };
-  LambdaDeployerInvokePermission:
-    Type: 'AWS::Lambda::Permission'
-    Properties:
-      Action: lambda:InvokeFunction
-      Principal: s3.amazonaws.com
-      SourceArn: !Sub 'arn:aws:s3:::${LambdaStoreS3}'
-      FunctionName: !GetAtt SnsToSlack.Arn
+#  LambdaDeployerInvokePermission:
+#    Type: 'AWS::Lambda::Permission'
+#    Properties:
+#      Action: lambda:InvokeFunction
+#      Principal: s3.amazonaws.com
+#      SourceArn: !Sub 'arn:aws:s3:::${LambdaStoreS3}'
+#      FunctionName: !GetAtt SnsToSlack.Arn
+
 Outputs:
   Pipeline:
     Description: URL of slack.
