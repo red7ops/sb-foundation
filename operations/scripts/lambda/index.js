@@ -149,6 +149,8 @@ exports.handler = function(event, context, callback) {
     setData(msgObj, postData);
     addAttachments(msgObj, postData);
 
+    console.log('Data before write: ', util.format("%j", postData));
+
     req.write(util.format("%j", postData));
     req.end();
 

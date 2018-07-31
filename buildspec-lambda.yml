@@ -1,0 +1,36 @@
+version: 0.2
+
+env:
+  variables:
+    LAMBDA: operations/scripts/lambda
+
+phases:
+  install:
+    commands:
+    - npm install jslint -g
+  pre_build:
+    commands:
+    - cd $LAMBDA
+    - jslint index.js
+    - npm install
+    - ls -la
+    - zip lambda.zip .
+  build:
+    commands:
+    - echo "Checking if Lambda update needed"
+    - FILE="$TEMPLATE_BUCKET/scripts/lambda.zip"
+    - echo "$FILE"
+    - |
+      (aws s3 cp "s3://$FILE" "s3_lambda.zip")
+      if [ $? = 0 ]; then
+        (diff -q <(unzip -l lambda.zip) <(unzip -l s3_lambda.zip) -x node_modules)
+        if [ $? = 0 ]; then
+          echo "No changes"
+        else
+          diff -l <(unzip -l lambda.zip) <(unzip -l s3_lambda.zip) -x node_modules
+          echo "uploading changes"
+          aws s3 cp "lambda.zip" "s3://$FILE"
+        fi
+      else
+        echo "No existing lambda file."
+      fi

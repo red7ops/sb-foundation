@@ -294,7 +294,33 @@ Resources:
         Value: 'Scoreboards Fixed'
       - Key: Client
         Value: 'Internal'
-# TODO project for npm install and zip?
+  LambdaProject:
+    Type: 'AWS::CodeBuild::Project'
+    Properties:
+      Name: !Sub '${AWS::StackName}-LambdaProject'
+      Description: 'Validate, parse, compress and store Lambdas.'
+      ServiceRole: !GetAtt CodeBuildRole.Arn
+      Artifacts:
+        Type: CODEPIPELINE
+      Environment:
+        Type: LINUX_CONTAINER
+        ComputeType: BUILD_GENERAL1_SMALL
+        Image: aws/codebuild/nodejs:8.11.0
+        EnvironmentVariables:
+        - Name: TEMPLATE_BUCKET
+          Value: !Ref TemplateStoreS3
+      Source:
+        BuildSpec: 'buildspec-lambda.yml'
+        Type: CODEPIPELINE
+      TimeoutInMinutes: 10
+      EncryptionKey: !Sub 'arn:aws:kms:${AWS::Region}:${AWS::AccountId}:alias/aws/s3'
+      Tags:
+      - Key: Name
+        Value: !Sub '${AWS::StackName}-LambdaProject'
+      - Key: Group
+        Value: 'Scoreboards Fixed'
+      - Key: Client
+        Value: 'Internal'
   MasterPipeline:
     Type: 'AWS::CodePipeline::Pipeline'
     Properties:
@@ -321,7 +347,7 @@ Resources:
           RunOrder: 1
       - Name: Build
         Actions:
-        - Name: BuildAction
+        - Name: MasterBuildAction
           InputArtifacts:
           - Name: SourceOutput
           ActionTypeId:
@@ -330,15 +356,28 @@ Resources:
             Version: 1
             Provider: CodeBuild
           OutputArtifacts:
-          - Name: BuildArtifact
+          - Name: MasterBuildArtifact
           Configuration:
             ProjectName: !Ref MasterProject
+          RunOrder: 1
+        - Name: LambdaBuildAction
+          InputArtifacts:
+          - Name: SourceOutput
+          ActionTypeId:
+            Category: Build
+            Owner: AWS
+            Version: 1
+            Provider: CodeBuild
+          OutputArtifacts:
+          - Name: LambdaBuildArtifact
+          Configuration:
+            ProjectName: !Ref LambdaProject
           RunOrder: 1
       - Name: Deploy
         Actions:
         - Name: OpSecChangeSet
           InputArtifacts:
-          - Name: BuildArtifact
+          - Name: MasterBuildArtifact
           ActionTypeId:
             Category: Deploy
             Owner: AWS

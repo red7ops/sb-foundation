@@ -78,6 +78,9 @@ Resources:
         'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'
       FunctionName: !GetAtt SnsToSlack.Arn
 Outputs:
+  LambdaUpdate:
+    Description: Date of last lambda update.
+    Value: '__LAMBDA_DATE__'
   Pipeline:
     Description: URL of slack.
     Value: !Sub 'https://red7sportstech.slack.com'
