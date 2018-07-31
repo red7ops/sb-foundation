@@ -100,8 +100,8 @@ Resources:
             - 'codebuild:StartBuild'
             - 'codebuild:BatchGetBuilds'
             Resource:
-            - !Sub 'arn:aws:codebuild:${AWS::Region}:${AWS::AccountId}:project/${AWS::StackName}-MasterProject'
-            - !Sub 'arn:aws:codebuild:${AWS::Region}:${AWS::AccountId}:build/${AWS::StackName}-MasterProject:*'
+            - !Sub 'arn:aws:codebuild:${AWS::Region}:${AWS::AccountId}:project/${AWS::StackName}-*'
+            - !Sub 'arn:aws:codebuild:${AWS::Region}:${AWS::AccountId}:build/${AWS::StackName}-*:*'
           -
             Effect: 'Allow'
             Action:
@@ -391,8 +391,8 @@ Resources:
             RoleArn: !GetAtt CloudFormationRole.Arn
             Capabilities: CAPABILITY_NAMED_IAM
             StackName: 'SB-OpSec'
-            TemplatePath: BuildArtifact::operations/opsec.yml
-            TemplateConfiguration: BuildArtifact::operations/configs/opsec.json
+            TemplatePath: MasterBuildArtifact::operations/opsec.yml
+            TemplateConfiguration: MasterBuildArtifact::operations/configs/opsec.json
             ParameterOverrides: !Sub |
               {
                 "ArtifactStoreS3": "${ArtifactStoreS3}"
@@ -400,7 +400,7 @@ Resources:
           RunOrder: 1
         - Name: SlackChangeSet
           InputArtifacts:
-          - Name: BuildArtifact
+          - Name: MasterBuildArtifact
           ActionTypeId:
             Category: Deploy
             Owner: AWS
@@ -414,8 +414,8 @@ Resources:
             RoleArn: !GetAtt CloudFormationRole.Arn
             Capabilities: CAPABILITY_NAMED_IAM
             StackName: 'SB-Slack'
-            TemplatePath: BuildArtifact::operations/slack.yml
-            TemplateConfiguration: BuildArtifact::operations/configs/slack.json
+            TemplatePath: MasterBuildArtifact::operations/slack.yml
+            TemplateConfiguration: MasterBuildArtifact::operations/configs/slack.json
             ParameterOverrides: !Sub |
               {
                 "LambdaStoreS3": "${TemplateStoreS3}"

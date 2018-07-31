@@ -34,3 +34,6 @@ phases:
       else
         echo "No existing lambda file."
       fi
+artifacts:
+  files:
+  -
