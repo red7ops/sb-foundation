@@ -86,7 +86,9 @@ var util = require('util');
  * @param {HandlerCallback} cb
  * @returns {MessageObject}
  */
-function parseJson(json, cb) {
+function parseJson(json, cb)
+{
+    'use strict';
     var parsed;
 
     try {
@@ -95,7 +97,36 @@ function parseJson(json, cb) {
         cb(e);
     }
 
-    return parsed
+    return parsed;
+}
+
+/**
+ *
+ * @param {string} state
+ * @returns {string}
+ */
+function getColour(state)
+{
+    'use strict';
+    switch(state) {
+        case "FAILED":
+        case "STOPPED":
+            return "danger";
+
+        case "CANCELED":
+        case "ALERT":
+            return "warning";
+
+        case "STARTED":
+        case "RESUMED":
+        case "INFO":
+            return "#1a45f2";
+
+        default:
+            break;
+    }
+
+    return "good";
 }
 
 /**
@@ -106,30 +137,35 @@ function parseJson(json, cb) {
  */
 function createMessageObject(message, cb)
 {
+    'use strict';
     /**
      * Message Object
      * @type {MessageObject}
      */
-    var msgObj = parseJson(message, cb);
-    var type = "UNKNOWN";
+    var msgObj = parseJson(message, cb),
+        /**
+         * Type
+         * @type {string}
+         */
+        type = "UNKNOWN";
 
-    if( msgObj.hasOwnProperty("AlarmName") ) {
+    if (msgObj.hasOwnProperty("AlarmName")) {
         type = "ALARM";
     }
-    else if( msgObj.hasOwnProperty("approval") ) {
+    else if (msgObj.hasOwnProperty("approval")) {
         msgObj.approval.customData = parseJson(msgObj.approval.customData, cb);
         type = "APPROVAL";
     }
 
-    else if( msgObj.hasOwnProperty("project") ) {
+    else if (msgObj.hasOwnProperty("project")) {
         type = "PROJECT";
     }
 
-    else if( msgObj.hasOwnProperty("pipeline") ) {
+    else if (msgObj.hasOwnProperty("pipeline")) {
         type = "PIPELINE";
     }
 
-    else if( msgObj.hasOwnProperty("Records") && msgObj.Records[0].hasOwnProperty("codecommit") ) {
+    else if (msgObj.hasOwnProperty("Records") && msgObj.Records[0].hasOwnProperty("codecommit")) {
         type = "CODECOMMIT";
     }
 
@@ -147,6 +183,7 @@ function createMessageObject(message, cb)
  */
 function setData(msgObj, data)
 {
+    'use strict';
     switch (msgObj.type)
     {
         case "ALARM":
@@ -174,7 +211,6 @@ function setData(msgObj, data)
             break;
 
         default:
-            break;
 
     }
 
@@ -197,6 +233,7 @@ function setData(msgObj, data)
  */
 function addAttachments(msgObj, data)
 {
+    'use strict';
     switch (msgObj.type)
     {
         case "ALARM":
@@ -209,15 +246,13 @@ function addAttachments(msgObj, data)
             break;
 
         case "APPROVAL":
-            var isProd = msgObj.approval.customData.isProd;
-
             data.attachments = [
                 {
-                    "color": getColour(isProd ? "ALERT" : "INFO"),
-                    "pretext": isProd ? "Ready for Production" : "QA finished",
+                    "color": getColour(msgObj.approval.customData.isProd ? "ALERT" : "INFO"),
+                    "pretext": msgObj.approval.customData.isProd ? "Ready for Production" : "QA finished",
                     "fields": [
                         {
-                            "title": isProd ? "This will update production!" : "No changes will be made.",
+                            "title": msgObj.approval.customData.isProd ? "This will update production!" : "No changes will be made.",
                             "value": util.format("<%s|Click to Approve>", msgObj.approval.approvalReviewLink)
                         }
                     ]
@@ -268,7 +303,7 @@ function addAttachments(msgObj, data)
                             }
                         ]
                     }
-                ]
+                ];
             }
             break;
 
@@ -283,36 +318,7 @@ function addAttachments(msgObj, data)
                     "text": util.format("%j", msgObj)
                 }
             ];
-            break;
     }
-}
-
-/**
- *
- * @param {string} state
- * @returns {string}
- */
-function getColour(state)
-{
-    switch(state) {
-        case "FAILED":
-        case "STOPPED":
-            return "danger";
-
-        case "CANCELED":
-        case "ALERT":
-            return "warning";
-
-        case "STARTED":
-        case "RESUMED":
-        case "INFO":
-            return "#1a45f2";
-
-        default:
-            break;
-    }
-
-    return "good";
 }
 
 /**
@@ -348,6 +354,10 @@ exports.handler = function(event, context, callback) {
             attachments: []
         },
 
+        /**
+         * Request
+         * @type {*}
+         */
         req = https.request(options, function(res) {
             console.log('StatusCode', res.statusCode);
             res.setEncoding('utf8');
