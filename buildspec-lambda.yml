@@ -11,12 +11,11 @@ phases:
   pre_build:
     commands:
     - cd $LAMBDA
-    - jshint index.js --verbose
+    - jshint index.js --show-non-errors
     - npm install
-    - ls -la
-    - zip lambda.zip .
   build:
     commands:
+    - zip -r lambda.zip .
     - echo "Checking if Lambda update needed"
     - FILE="$TEMPLATE_BUCKET/scripts/lambda.zip"
     - echo "$FILE"
