@@ -53,7 +53,7 @@ Resources:
   DeployerExecutionRole:
     Type: 'AWS::IAM::Role'
     Properties:
-      RoleName: !Sub '${AWS::StackName}-SlackExecutionRole'
+      RoleName: !Sub '${AWS::StackName}-DeployerExecutionRole'
       AssumeRolePolicyDocument:
         Version: '2012-10-17'
         Statement:
