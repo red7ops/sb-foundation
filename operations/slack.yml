@@ -77,7 +77,7 @@ Resources:
             Action:
             - "lambda:UpdateFunctionCode"
             Resource:
-            - "*"
+            - !Sub "arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:*"
           - Effect: Allow
             Action:
             - "s3:Get*"
@@ -130,7 +130,7 @@ Resources:
               bucket = event.Records[0].s3.bucket.name
               version = event.Records[0].s3.object.versionId
               if (bucket == "${LambdaStoreS3}" && key == "${LambdaLocation}" && version) {
-                  var functionName = "handler";
+                  var functionName = "${SnsToSlack}";
                   console.log("uploaded to lambda function: " + functionName);
                   var params = {
                       FunctionName: functionName,
