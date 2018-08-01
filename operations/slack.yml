@@ -94,7 +94,7 @@ Resources:
         ZipFile: !Sub |
           var AWS = require('aws-sdk');
           var lambda = new AWS.Lambda();
-          exports.handler = function(event, context) {
+          exports.handler = function(event, context, callback) {
               var key, bucket, version;
               key = event.Records[0].s3.object.key
               bucket = event.Records[0].s3.bucket.name
@@ -111,14 +111,14 @@ Resources:
                   lambda.updateFunctionCode(params, function(err, data) {
                       if (err) {
                           console.log(err, err.stack);
-                          context.fail(err);
+                          callback(err);
                       } else {
                           console.log(data);
-                          context.succeed(data);
+                          callback(null, data);
                       }
                   });
               } else {
-                  context.succeed("skipping zip " + key + " in bucket " + bucket + " with version " + version);
+                  callback(null, "skipping zip " + key + " in bucket " + bucket + " with version " + version);
               }
             };
 #  LambdaDeployerInvokePermission:
