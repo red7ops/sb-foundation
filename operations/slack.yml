@@ -101,7 +101,8 @@ Resources:
       Role: !GetAtt SlackExecutionRole.Arn
       Runtime: nodejs6.10
       Environment:
-        SlackEndpoint: !Ref SlackEndpoint
+        Variables:
+          SlackEndpoint: !Ref SlackEndpoint
       Code:
         S3Bucket: !Ref LambdaStoreS3
         S3Key: !Ref LambdaLocation
