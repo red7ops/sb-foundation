@@ -333,7 +333,7 @@ exports.handler = function(event, context, callback) {
      */
     var options = {
             method: 'POST',
-            hostname: 'api.slack.com',
+            hostname: 'hooks.slack.com',
             port: 443,
             path: '/services/${SlackEndpoint}'
         },
@@ -379,6 +379,8 @@ exports.handler = function(event, context, callback) {
         console.log('problem with request: ' + e.message);
         callback(e);
     });
+
+    console.log("Options: ", options);
 
     setData(msgObj, postData);
     addAttachments(msgObj, postData);
