@@ -102,7 +102,8 @@ Resources:
       Runtime: nodejs6.10
       Environment:
         Variables:
-          SlackEndpoint: !Ref SlackEndpoint
+          SlackHost: 'hooks.slack.com'
+          SlackPath: !Sub '/services/${SlackEndpoint}'
       Code:
         S3Bucket: !Ref LambdaStoreS3
         S3Key: !Ref LambdaLocation
