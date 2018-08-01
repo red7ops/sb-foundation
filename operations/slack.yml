@@ -50,11 +50,39 @@ Resources:
             Action:
             - "logs:*"
             Resource: "arn:aws:logs:*:*:*"
+  DeployerExecutionRole:
+    Type: 'AWS::IAM::Role'
+    Properties:
+      RoleName: !Sub '${AWS::StackName}-SlackExecutionRole'
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+        - Effect: Allow
+          Principal:
+            Service:
+            - "lambda.amazonaws.com"
+          Action:
+          - "sts:AssumeRole"
+      Path: "/"
+      Policies:
+      - PolicyName: root
+        PolicyDocument:
+          Version: '2012-10-17'
+          Statement:
+          - Effect: Allow
+            Action:
+            - "logs:*"
+            Resource: "arn:aws:logs:*:*:*"
           - Effect: Allow
             Action:
             - "lambda:UpdateFunctionCode"
             Resource:
-            - "*"
+            - !Sub "arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:handler"
+          - Effect: Allow
+            Action:
+            - "s3:GetObject"
+            Resource:
+            - !Sub "arn:aws:s3:::${LambdaStoreS3}"
   LambdaEndpointSubscription:
     Type: 'AWS::SNS::Subscription'
     Properties:
@@ -89,7 +117,7 @@ Resources:
       Timeout: 15
       TracingConfig:
         Mode: PassThrough
-      Role: !GetAtt SlackExecutionRole.Arn
+      Role: !GetAtt DeployerExecutionRole.Arn
       Runtime: nodejs6.10
       Code:
         ZipFile: !Sub |
