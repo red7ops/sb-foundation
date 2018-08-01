@@ -53,7 +53,8 @@ Resources:
           - Effect: Allow
             Action:
             - "lambda:UpdateFunctionCode"
-            Resource: !Sub "arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:*"
+            Resource:
+            - "*"
   LambdaEndpointSubscription:
     Type: 'AWS::SNS::Subscription'
     Properties:
