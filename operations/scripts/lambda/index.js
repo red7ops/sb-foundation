@@ -355,6 +355,7 @@ exports.handler = function(event, context, callback) {
          */
         req = https.request(options, function(res) {
             console.log('StatusCode', res.statusCode);
+            console.log('Headers', res.headers);
             res.setEncoding('utf8');
             res.on('data', function () {
                 console.log("data");
@@ -372,8 +373,6 @@ exports.handler = function(event, context, callback) {
          */
         msgObj = createMessageObject(event.Records[0].Sns.Message, callback);
 
-    console.log("after msgObj");
-
     /**
      *
      */
@@ -385,10 +384,6 @@ exports.handler = function(event, context, callback) {
     setData(msgObj, postData);
     addAttachments(msgObj, postData);
 
-    console.log('Data before write: ', util.format("%j", postData));
-
     req.write(util.format("%j", postData));
     req.end();
-
-    console.log("after req.end()");
 };
