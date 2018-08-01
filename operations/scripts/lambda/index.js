@@ -333,7 +333,7 @@ exports.handler = function(event, context, callback) {
      */
     var options = {
             method: 'POST',
-            hostname: 'hooks.slack.com',
+            hostname: 'api.slack.com',
             port: 443,
             path: '/services/${SlackEndpoint}'
         },
