@@ -82,7 +82,7 @@ Resources:
             Action:
             - "s3:GetObject"
             Resource:
-            - !Sub "arn:aws:s3:::${LambdaStoreS3}"
+            - !Sub "arn:aws:s3:::${LambdaStoreS3}/*"
   LambdaEndpointSubscription:
     Type: 'AWS::SNS::Subscription'
     Properties:
