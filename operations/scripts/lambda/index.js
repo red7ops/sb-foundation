@@ -357,12 +357,11 @@ exports.handler = function(event, context, callback) {
             console.log('StatusCode', res.statusCode);
             console.log('Headers', res.headers);
             res.setEncoding('utf8');
-            res.on('data', function () {
-                console.log("data");
+            res.on('data', function (d) {
+                console.log(d);
                 callback(null, "Data Success");
             });
             res.on('end', function () {
-                console.log("end");
                 callback(null, "End Success");
             });
         }),
