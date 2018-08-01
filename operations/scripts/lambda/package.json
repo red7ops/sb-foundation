@@ -1,7 +1,7 @@
 {
   "name": "lambda",
   "version": "1.0.0",
-  "description": "",
+  "description": "Lambda for parsing events to Slack",
   "main": "index.js",
   "dependencies": {
     "https": "^1.0.0",
@@ -11,6 +11,6 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "author": "",
-  "license": "ISC"
+  "private": true,
+  "author": "Fred Shier"
 }

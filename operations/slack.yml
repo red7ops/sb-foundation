@@ -80,7 +80,8 @@ Resources:
             - !Sub "arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:handler"
           - Effect: Allow
             Action:
-            - "s3:GetObject"
+            - "s3:Get*"
+            - "s3:List*"
             Resource:
             - !Sub "arn:aws:s3:::${LambdaStoreS3}/*"
   LambdaEndpointSubscription:
