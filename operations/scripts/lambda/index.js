@@ -198,7 +198,7 @@ function setData(msgObj, data) {
             break;
 
         case "PIPELINE":
-            data.channel = msgObj.state === "SUCCEEDED" ? "announcements" : msgObj.channel;
+            data.channel = msgObj.channel;
             data.text = "PIPELINE: " + msgObj.pipeline;
             break;
 
@@ -379,8 +379,6 @@ exports.handler = function(event, context, callback) {
         console.log('problem with request: ' + e.message);
         callback(e);
     });
-
-    console.log("Options: ", options);
 
     setData(msgObj, postData);
     addAttachments(msgObj, postData);
