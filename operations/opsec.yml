@@ -262,6 +262,128 @@ Resources:
             Resource:
             - !Sub 'arn:aws:codecommit:${AWS::Region}:${AWS::AccountId}:sb-*'
             - !Sub 'arn:aws:codecommit:${AWS::Region}:${AWS::AccountId}:sb2-*'
+  CloudFormationRole:
+    Type: 'AWS::IAM::Role'
+    Properties:
+      RoleName: !Sub '${AWS::StackName}-CloudFormationRole'
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+        -
+          Effect: "Allow"
+          Principal:
+            Service:
+            - "cloudformation.amazonaws.com"
+          Action:
+          - "sts:AssumeRole"
+      Path: /service-role/
+      Policies:
+      -
+        PolicyName: "CloudFormationNestedCFNAccessPolicy"
+        PolicyDocument:
+          Version: "2012-10-17"
+          Statement:
+          - Effect: "Allow"
+            Action:
+            - "iam:AddRoleToInstanceProfile"
+            - "iam:AttachRolePolicy"
+            - "iam:CreateInstanceProfile"
+            - "iam:CreatePolicy"
+            - "iam:CreateRole"
+            - "iam:CreateServiceLinkedRole"
+            - "iam:DeleteInstanceProfile"
+            - "iam:DeletePolicy"
+            - "iam:DeleteRole"
+            - "iam:DeleteRolePolicy"
+            - "iam:DetachRolePolicy"
+            - "iam:GetInstanceProfile"
+            - "iam:GetPolicy"
+            - "iam:GetRole"
+            - "iam:GetRolePolicy"
+            - "iam:ListAttachedRolePolicies"
+            - "iam:ListInstanceProfiles"
+            - "iam:ListInstanceProfilesForRole"
+            - "iam:ListRolePolicies"
+            - "iam:ListRoles"
+            - "iam:ListServerCertificates"
+            - "iam:PassRole"
+            - "iam:PutRolePolicy"
+            - "iam:RemoveRoleFromInstanceProfile"
+            Resource:
+            - !Sub 'arn:aws:iam::${AWS::AccountId}:role/${AWS::StackName}-*'
+          - Effect: "Allow"
+            Action:
+            - "ec2:AllocateAddress"
+            - "ec2:Describe*"
+            - "ec2:CreateNetworkInterface"
+            - "ec2:CreateSecurityGroup"
+            - "ec2:DeleteNetworkInterface"
+            - "ec2:ModifyInstanceAttribute"
+            - "ec2:ModifyNetworkInterfaceAttribute"
+            - "ec2:ReleaseAddress"
+            - "ecs:*"
+            - "autoscaling:Describe*"
+            - "elasticloadbalancing:AddTags"
+            - "elasticloadbalancing:Describe*"
+            - "elasticloadbalancing:CreateListener"
+            - "elasticloadbalancing:CreateLoadBalancer"
+            - "elasticloadbalancing:CreateRule"
+            - "elasticloadbalancing:CreateTargetGroup"
+            - "elasticloadbalancing:DeleteTargetGroup"
+            - "elasticloadbalancing:DeleteLoadBalancer"
+            - "elasticloadbalancing:DeleteListener"
+            - "elasticloadbalancing:DeleteRule"
+            - "elasticloadbalancing:ModifyTargetGroup"
+            - "elasticloadbalancing:ModifyTargetGroupAttributes"
+            - "elasticloadbalancing:ModifyLoadBalancerAttributes"
+            - "elasticloadbalancing:ModifyListener"
+            - "elasticloadbalancing:ModifyRule"
+            - "elasticloadbalancing:SetRulePriorities"
+            - "autoscaling:CreateAutoScalingGroup"
+            - "autoscaling:CreateLaunchConfiguration"
+            - "autoscaling:DeletePolicy"
+            - "application-autoscaling:RegisterScalableTarget"
+            - "application-autoscaling:DescribeScalableTargets"
+            - "application-autoscaling:DeregisterScalableTarget"
+            - "application-autoscaling:PutScalingPolicy"
+            - "application-autoscaling:DescribeScalingPolicies"
+            - "application-autoscaling:DescribeScalingActivities"
+            - "application-autoscaling:DeleteScalingPolicy"
+            - "application-autoscaling:DescribeScheduledActions"
+            - "cloudwatch:DeleteAlarms"
+            - "cloudwatch:DescribeAlarms"
+            - "cloudwatch:DescribeAlarmsForMetric"
+            - "cloudwatch:GetMetricStatistics"
+            - "cloudwatch:ListMetrics"
+            - "cloudwatch:PutMetricAlarm"
+            - "cloudwatch:PutMetricData"
+            - "ssm:DescribeParameters"
+            - "logs:*"
+            - "rds:DescribeEngineDefaultParameters"
+            - "route53:GetChange"
+            - "route53:GetHostedZone"
+            - "route53:ListResourceRecordSets"
+            - "elasticache:*"
+            - "lambda:*"
+            - "events:*"
+            - "elasticfilesystem:*"
+            - "cloudfront:CreateDistribution"
+            - "cloudfront:DeleteDistribution"
+            - "cloudfront:GetDistribution"
+            - "cloudfront:GetDistributionConfig"
+            - "cloudfront:ListDistributions"
+            - "cloudfront:UpdateDistribution"
+            - "cloudfront:ListCloudFrontOriginAccessIdentities"
+            Resource:
+            - "*"
+          - Effect: "Allow"
+            Action:
+            - "s3:GetObject"
+            - "s3:ListBucket"
+            Resource:
+            - !Sub 'arn:aws:s3:::${ArtifactStoreS3}'
+            - !Sub 'arn:aws:s3:::${ArtifactStoreS3}/*'
+
   ECSRole:
     Type: 'AWS::IAM::Role'
     Properties:
@@ -300,7 +422,6 @@ Resources:
             - "s3:GetObject"
             Resource:
             - "*"
-
 Outputs:
   TopicARN:
     Description: 'The ARN of the alert topic.'
