@@ -310,7 +310,7 @@ Resources:
             - "iam:PutRolePolicy"
             - "iam:RemoveRoleFromInstanceProfile"
             Resource:
-            - !Sub 'arn:aws:iam::${AWS::AccountId}:role/${AWS::StackName}-*'
+            - !Sub 'arn:aws:iam::${AWS::AccountId}:role/SB-*'
           - Effect: "Allow"
             Action:
             - "ec2:AllocateAddress"
