@@ -438,6 +438,11 @@ Outputs:
     Value: !GetAtt CodeBuildRole.Arn
     Export:
       Name: !Sub '${AWS::StackName}-CodeBuildRoleARN'
+  CloudFormationRoleARN:
+    Description: 'The ARN of the CloudFormation role'
+    Value: !GetAtt CloudFormationRole.Arn
+    Export:
+      Name: !Sub '${AWS::StackName}-CloudFormationRoleARN'
   ECSRoleARN:
     Description: 'The ARN of the ECS role'
     Value: !GetAtt ECSRole.Arn
