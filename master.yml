@@ -229,6 +229,7 @@ Resources:
             Resource:
             - !Sub 'arn:aws:iam::${AWS::AccountId}:role/${AWS::StackName}-*'
             - !Sub 'arn:aws:iam::${AWS::AccountId}:role/SB-Slack-*'
+            - !Sub 'arn:aws:iam::${AWS::AccountId}:role/SB-OpSec-*'
           - Effect: 'Allow'
             Action:
             - 'cloudwatch:DeleteAlarms'
