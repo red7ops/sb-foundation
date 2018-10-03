@@ -379,6 +379,7 @@ Resources:
             - "*"
           - Effect: "Allow"
             Action:
+            - "s3:CreateBucket"
             - "s3:GetObject"
             - "s3:ListBucket"
             Resource:
