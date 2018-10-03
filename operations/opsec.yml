@@ -177,6 +177,7 @@ Resources:
             - "iam:PassRole"
             Resource:
             - !Sub 'arn:aws:iam::${AWS::AccountId}:role/${AWS::StackName}-CloudFormationRole'
+            - !Sub 'arn:aws:iam::${AWS::AccountId}:role/service-role/${AWS::StackName}-CloudFormationRole'
             - !Sub 'arn:aws:iam::${AWS::AccountId}:role/${AWS::StackName}-ECSRole'
   CodeBuildRole:
     Type: 'AWS::IAM::Role'
