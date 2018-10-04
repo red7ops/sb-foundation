@@ -122,6 +122,8 @@ Resources:
             Resource:
             - !Sub 'arn:aws:s3:::${ArtifactStoreS3}'
             - !Sub 'arn:aws:s3:::${ArtifactStoreS3}/*'
+            - !Sub 'arn:aws:s3:::r7-*'
+            - !Sub 'arn:aws:s3:::r7-*/*'
           -
             Effect: "Allow"
             Action:
