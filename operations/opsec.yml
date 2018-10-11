@@ -144,6 +144,7 @@ Resources:
             - !Sub 'arn:aws:codecommit:${AWS::Region}:${AWS::AccountId}:sb2-*'
             - !Sub 'arn:aws:codecommit:${AWS::Region}:${AWS::AccountId}:bb-*'
             - !Sub 'arn:aws:codecommit:${AWS::Region}:${AWS::AccountId}:ob-*'
+            - !Sub 'arn:aws:codecommit:${AWS::Region}:${AWS::AccountId}:r7-*'
           -
             Effect: "Allow"
             Action:
@@ -161,6 +162,7 @@ Resources:
             - !Sub 'arn:aws:cloudformation:${AWS::Region}:${AWS::AccountId}:stack/SB-*'
             - !Sub 'arn:aws:cloudformation:${AWS::Region}:${AWS::AccountId}:stack/BB-*'
             - !Sub 'arn:aws:cloudformation:${AWS::Region}:${AWS::AccountId}:stack/OB-*'
+            - !Sub 'arn:aws:cloudformation:${AWS::Region}:${AWS::AccountId}:stack/R7-*'
           -
             Effect: "Allow"
             Action:
@@ -173,6 +175,8 @@ Resources:
             - !Sub 'arn:aws:codebuild:${AWS::Region}:${AWS::AccountId}:build/BB-*:*'
             - !Sub 'arn:aws:codebuild:${AWS::Region}:${AWS::AccountId}:project/OB-*'
             - !Sub 'arn:aws:codebuild:${AWS::Region}:${AWS::AccountId}:build/OB-*:*'
+            - !Sub 'arn:aws:codebuild:${AWS::Region}:${AWS::AccountId}:project/R7-*'
+            - !Sub 'arn:aws:codebuild:${AWS::Region}:${AWS::AccountId}:build/R7-*:*'
           -
             Effect: "Allow"
             Action:
