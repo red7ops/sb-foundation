@@ -331,6 +331,8 @@ Resources:
             - "ec2:ModifyInstanceAttribute"
             - "ec2:ModifyNetworkInterfaceAttribute"
             - "ec2:ReleaseAddress"
+            - "ec2:AuthorizeSecurityGroupIngress"
+            - "ec2:DeleteSecurityGroup"
             - "ecs:*"
             - "autoscaling:Describe*"
             - "elasticloadbalancing:AddTags"
