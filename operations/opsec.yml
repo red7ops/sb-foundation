@@ -333,6 +333,7 @@ Resources:
             - "ec2:ReleaseAddress"
             - "ec2:AuthorizeSecurityGroupIngress"
             - "ec2:DeleteSecurityGroup"
+            - "ec2:CreateTags"
             - "ecs:*"
             - "autoscaling:Describe*"
             - "elasticloadbalancing:AddTags"
