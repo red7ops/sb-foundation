@@ -406,7 +406,7 @@ Resources:
           Effect: "Allow"
           Principal:
             Service:
-            - "ecs.amazonaws.com"
+            - "ecs-tasks.amazonaws.com"
           Action:
           - "sts:AssumeRole"
       Path: /
@@ -419,18 +419,12 @@ Resources:
           -
             Effect: "Allow"
             Action:
-            - "ec2:AuthorizeSecurityGroupIngress"
-            - "ec2:Describe*"
-            - "elasticloadbalancing:DeregisterInstancesFromLoadBalancer"
-            - "elasticloadbalancing:Describe*"
-            - "elasticloadbalancing:RegisterInstancesWithLoadBalancer"
-            - "elasticloadbalancing:DeregisterTargets"
-            - "elasticloadbalancing:RegisterTargets"
-            - "ecs:RegisterTaskDefinition"
-            - "ecs:ListTaskDefinitions"
-            - "ecs:DescribeTaskDefinition"
-            - "s3:ListBucket"
-            - "s3:GetObject"
+            - "ecr:GetAuthorizationToken"
+            - "ecr:BatchCheckLayerAvailability"
+            - "ecr:GetDownloadUrlForLayer"
+            - "ecr:BatchGetImage"
+            - "logs:CreateLogStream"
+            - "logs:PutLogEvents"
             Resource:
             - "*"
 Outputs:
