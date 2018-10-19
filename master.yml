@@ -226,6 +226,7 @@ Resources:
             - 'iam:PassRole'
             - 'iam:PutRolePolicy'
             - 'iam:RemoveRoleFromInstanceProfile'
+            - 'iam:UpdateAssumeRolePolicyDocument'
             Resource:
             - !Sub 'arn:aws:iam::${AWS::AccountId}:role/${AWS::StackName}-*'
             - !Sub 'arn:aws:iam::${AWS::AccountId}:role/SB-Slack-*'
