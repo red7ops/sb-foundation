@@ -227,6 +227,7 @@ Resources:
             - "ecr:ListImages"
             - "ecr:DescribeImages"
             - "ecr:BatchGetImage"
+            - "ecr:BatchDeleteImage"
             - "ecr:InitiateLayerUpload"
             - "ecr:UploadLayerPart"
             - "ecr:CompleteLayerUpload"
