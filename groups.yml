@@ -3,32 +3,11 @@ Description: 'Group IAM permissions'
 Parameters:
 
 Resources:
-  ScoreboardsCodeCommitPolicy:
-    Type: 'AWS::IAM::ManagedPolicy'
-    Properties:
-      Description: "Policy for allowing access to scoreboards codecommit"
-      Path: "/scoreboards/"
-      PolicyDocument:
-        Version: "2012-10-17"
-        Statement:
-        - Effect: "Allow"
-          Action:
-          - "codecommit:BatchGetRepositories"
-          - "codecommit:Get*"
-          - "codecommit:GitPull"
-          - "codecommit:GitPush"
-          - "codecommit:List*"
-          - "codecommit:Put*"
-          - "codecommit:Test*"
-          - "codecommit:Update*"
-          Resource:
-          - !Sub 'arn:aws:codecommit:${AWS::Region}:${AWS::AccountId}:sb-*'
-          - !Sub 'arn:aws:codecommit:${AWS::Region}:${AWS::AccountId}:sb2-*'
   CodeCommitPolicy:
     Type: 'AWS::IAM::ManagedPolicy'
     Properties:
-      Description: "Policy for allowing access to scoreboards codecommit"
-      Path: "/scoreboards/"
+      Description: "Policy for allowing access to codecommit"
+      Path: "/"
       PolicyDocument:
         Version: "2012-10-17"
         Statement:
@@ -43,8 +22,20 @@ Resources:
           - "codecommit:Test*"
           - "codecommit:Update*"
           Resource:
-          - !Sub 'arn:aws:codecommit:${AWS::Region}:${AWS::AccountId}:sb-*'
-          - !Sub 'arn:aws:codecommit:${AWS::Region}:${AWS::AccountId}:sb2-*'
-
-
+          - !Sub 'arn:aws:codecommit:${AWS::Region}:${AWS::AccountId}:*'
+        - Effect: "Deny"
+          Action:
+          - "codecommit:GitPush"
+          - "codecommit:DeleteBranch"
+          - "codecommit:PutFile"
+          - "codecommit:MergePullRequestByFastForward"
+          Resource:
+          - !Sub 'arn:aws:codecommit:${AWS::Region}:${AWS::AccountId}:*'
+          Condition:
+            StringEqualsIfExists:
+              "codecommit:References":
+              - "refs/heads/master"
+              - "refs/heads/release"
+            Null:
+              "codecommit:References": false
 

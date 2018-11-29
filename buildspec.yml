@@ -12,7 +12,7 @@ phases:
     - pip install demjson
   pre_build:
     commands:
-    - yamllint .
+#    - yamllint .
     - |
       find . -type f -name '*.json' | while read file; do
         set -ex && jsonlint "$file"
