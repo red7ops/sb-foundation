@@ -140,11 +140,7 @@ Resources:
             - "codecommit:GitPull"
             - "codecommit:UploadArchive"
             Resource:
-            - !Sub 'arn:aws:codecommit:${AWS::Region}:${AWS::AccountId}:sb-*'
-            - !Sub 'arn:aws:codecommit:${AWS::Region}:${AWS::AccountId}:sb2-*'
-            - !Sub 'arn:aws:codecommit:${AWS::Region}:${AWS::AccountId}:bb-*'
-            - !Sub 'arn:aws:codecommit:${AWS::Region}:${AWS::AccountId}:ob-*'
-            - !Sub 'arn:aws:codecommit:${AWS::Region}:${AWS::AccountId}:r7-*'
+            - !Sub 'arn:aws:codecommit:${AWS::Region}:${AWS::AccountId}:*'
           -
             Effect: "Allow"
             Action:
@@ -159,24 +155,15 @@ Resources:
             - "cloudformation:ValidateTemplate"
             - "cloudformation:ExecuteChangeSet"
             Resource:
-            - !Sub 'arn:aws:cloudformation:${AWS::Region}:${AWS::AccountId}:stack/SB-*'
-            - !Sub 'arn:aws:cloudformation:${AWS::Region}:${AWS::AccountId}:stack/BB-*'
-            - !Sub 'arn:aws:cloudformation:${AWS::Region}:${AWS::AccountId}:stack/OB-*'
-            - !Sub 'arn:aws:cloudformation:${AWS::Region}:${AWS::AccountId}:stack/R7-*'
+            - !Sub 'arn:aws:cloudformation:${AWS::Region}:${AWS::AccountId}:stack/*'
           -
             Effect: "Allow"
             Action:
             - "codebuild:StartBuild"
             - "codebuild:BatchGetBuilds"
             Resource:
-            - !Sub 'arn:aws:codebuild:${AWS::Region}:${AWS::AccountId}:project/SB-*'
-            - !Sub 'arn:aws:codebuild:${AWS::Region}:${AWS::AccountId}:build/SB-*:*'
-            - !Sub 'arn:aws:codebuild:${AWS::Region}:${AWS::AccountId}:project/BB-*'
-            - !Sub 'arn:aws:codebuild:${AWS::Region}:${AWS::AccountId}:build/BB-*:*'
-            - !Sub 'arn:aws:codebuild:${AWS::Region}:${AWS::AccountId}:project/OB-*'
-            - !Sub 'arn:aws:codebuild:${AWS::Region}:${AWS::AccountId}:build/OB-*:*'
-            - !Sub 'arn:aws:codebuild:${AWS::Region}:${AWS::AccountId}:project/R7-*'
-            - !Sub 'arn:aws:codebuild:${AWS::Region}:${AWS::AccountId}:build/R7-*:*'
+            - !Sub 'arn:aws:codebuild:${AWS::Region}:${AWS::AccountId}:project/*'
+            - !Sub 'arn:aws:codebuild:${AWS::Region}:${AWS::AccountId}:build/*:*'
           -
             Effect: "Allow"
             Action:
