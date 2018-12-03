@@ -39,4 +39,169 @@ Resources:
             Null:
               "codecommit:References": false
 
+  IAMPolicy:
+    Type: 'AWS::IAM::ManagedPolicy'
+    Properties:
+      Description: "Policy for IAM access"
+      Path: "/"
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+        - Effect: "Allow"
+          Action:
+          - "iam:ListAccessKeys"
+          - "iam:ListSSHPublicKeys"
+          - "iam:ListServiceSpecificCredentials"
+          - "iam:ListAccessKeys"
+          - "iam:GetSSHPublicKey"
+          Resource:
+          - "arn:aws:iam::*:user/${aws:username}"
 
+  EC2Policy:
+    Type: 'AWS::IAM::ManagedPolicy'
+    Properties:
+      Description: "Policy for EC2 access"
+      Path: "/"
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+        - Effect: "Allow"
+          Action:
+          - "ec2:Describe*"
+          - "elasticloadbalancing:Describe*"
+          - "autoscaling:Describe*"
+          Resource:
+          - "*"
+
+  CloudWatchPolicy:
+    Type: 'AWS::IAM::ManagedPolicy'
+    Properties:
+      Description: "Policy for CloudWatch access"
+      Path: "/"
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+        - Effect: "Allow"
+          Action:
+          - "cloudwatch:ListMetrics"
+          - "cloudwatch:GetMetricStatistics"
+          - "cloudwatch:Describe*"
+          - "logs:Describe"
+          - "logs:Get*"
+          - "logs:FilterLogEvents"
+          Resource:
+          - "*"
+
+  CloudFormationPolicy:
+    Type: 'AWS::IAM::ManagedPolicy'
+    Properties:
+      Description: "Policy for CloudFormation access"
+      Path: "/"
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+        - Effect: "Allow"
+          Action:
+          - "cloudformation:Describe*"
+          - "cloudformation:Get*"
+          - "cloudformation:List*"
+        Resource:
+        - "*"
+
+#TODO ecs rules
+  ECSAutoScalingPolicy:
+    Type: 'AWS::IAM::ManagedPolicy'
+    Properties:
+      Description: "Policy for ECS autoscaling"
+      Path: "/"
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+        - Effect: "Allow"
+          Action:
+          - "application-autoscaling:DescribeScalableTargets"
+          - "application-autoscaling:DescribeScalingActivities"
+          - "application-autoscaling:DescribeScalingPolicies"
+          - "application-autoscaling:RegisterScalableTarget"
+          - "ecs:*"
+          Resource:
+          - "*"
+
+  CodeCommitRepoPolicy:
+    Type: 'AWS::IAM::ManagedPolicy'
+    Properties:
+      Description: "Policy for creating codecommit repositories."
+      Path: "/"
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+        - Effect: "Allow"
+          Action:
+          - "codecommit:CreateRepository"
+          Resource:
+          - "*"
+
+  EC2SecurityPolicy:
+    Type: 'AWS::IAM::ManagedPolicy'
+    Properties:
+      Description: "Policy for editing EC2 security groups."
+      Path: "/"
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+        - Effect: "Allow"
+          Action:
+          - "ec2:AuthorizeSecurityGroupEgress"
+          - "ec2:AuthorizeSecurityGroupIngress"
+          - "ec2:DescribeSecurityGroups"
+          - "ec2:DescribeSecurityGroupReferences"
+          - "ec2:DescribeStaleSecurityGroups"
+          - "ec2:DescribeVpcs"
+          - "ec2:RevokeSecurityGroupEgress"
+          - "ec2:RevokeSecurityGroupIngress"
+          Resource:
+          - "*"
+
+  SSMPolicy:
+    Type: 'AWS::IAM::ManagedPolicy'
+    Properties:
+      Description: "Policy for creating secure parameters."
+      Path: "/"
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+        - Effect: "Allow"
+          Action:
+          - "ssm:DescribeParameters"
+          - "ssm:PutParameter"
+          - "ssm:GetParameter"
+          - "ssm:GetParameters"
+          - "kms:List*"
+          Resource:
+          - "*"
+
+  DeveloperGroup:
+    Type: 'AWS::IAM::Group'
+    Properties:
+      Path: "/"
+      ManagedPolicyArns:
+      - "arn:aws:iam::aws:policy/AWSCodePipelineApproverAccess"
+      - "arn:aws:iam::aws:policy/AWSHealthFullAccess"
+      - !Ref CodeCommitPolicy
+      - !Ref IAMPolicy
+      - !Ref EC2Policy
+      - !Ref CloudWatchPolicy
+
+#      codepipeline:StartPipelineExecution
+
+  SeniorGroup:
+    Type: 'AWS::IAM::Group'
+    Properties:
+      Path: "/"
+      ManagedPolicyArns:
+      - "arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryPowerUser"
+      - !Ref CloudFormationPolicy
+      - !Ref ECSAutoScalingPolicy
+      - !Ref CodeCommitRepoPolicy
+      - !Ref EC2SecurityPolicy
+      - !Ref SSMPolicy
