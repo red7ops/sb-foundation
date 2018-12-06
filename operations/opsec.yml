@@ -419,6 +419,56 @@ Resources:
             - "ssm:GetParametersByPath"
             Resource:
             - "*"
+
+  MongoRole:
+    Type: 'AWS::IAM::Role'
+    Properties:
+      RoleName: !Sub '${AWS::StackName}-MongoRole'
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+        - Effect: 'Allow'
+          Principle:
+            Service:
+            - "ec2.amazonaws.com"
+            - "ssm.amazonaws.com"
+          Action:
+          - "sts:AssumeRole"
+      Path: '/'
+      Policies:
+      - PolicyName: "MongoAccess"
+        PolicyDocument:
+          Version: "2012-10-17"
+          Statement:
+          - Effect: "Allow"
+            Action:
+            - "dynamodb:*"
+            - "s3:GetObject"
+            - "s3:GetObjectVersion"
+            - "ssm:GetParametersByPath"
+            - "ssm:GetParameter"
+            - "ec2:Describe*"
+            - "ec2:AttachNetworkInterface"
+            - "ec2:AttachVolume"
+            - "ec2:CreateTags"
+            - "ec2:CreateVolume"
+            - "ec2:RunInstances"
+            - "ec2:StartInstances"
+            - "ec2:DeleteVolume"
+            - "ec2:CreateSecurityGroup"
+            - "ec2:CreateSnapshot"
+            - "ec2messages:GetMessages"
+            - "cloudwatch:PutMetricData"
+          Resource:
+          - "*"
+  MongoProfile:
+    Type: 'AWS::IAM::InstanceProfile'
+    Properties:
+      InstanceProfileName: !Sub '${AWS::StackName}-MongoProfile'
+      Path: '/'
+      Roles:
+      - !Ref MongoRole
+
 Outputs:
   TopicARN:
     Description: 'The ARN of the alert topic.'
@@ -445,3 +495,8 @@ Outputs:
     Value: !GetAtt ECSRole.Arn
     Export:
       Name: !Sub '${AWS::StackName}-ECSRoleARN'
+  MongoProfile:
+    Description: 'The ARN of the Mongo profile.'
+    Value: !Ref MongoProfile
+    Export:
+      Name: !Sub '${AWS::StackName}-MongoProfileARN'
