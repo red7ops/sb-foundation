@@ -461,8 +461,8 @@ Resources:
             - "ec2:CreateSnapshot"
             - "ec2messages:GetMessages"
             - "cloudwatch:PutMetricData"
-          Resource:
-          - "*"
+            Resource:
+            - "*"
   MongoProfile:
     Type: 'AWS::IAM::InstanceProfile'
     Properties:
