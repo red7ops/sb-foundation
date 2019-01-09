@@ -375,6 +375,7 @@ Resources:
             - "elasticfilesystem:*"
             - "cloudfront:*"
             - "ssm:GetParameter"
+            - "ssm:GetParametersByPath"
             Resource:
             - "*"
           - Effect: "Allow"
@@ -432,7 +433,6 @@ Resources:
           Principle:
             Service:
             - "ec2.amazonaws.com"
-            - "ssm.amazonaws.com"
           Action:
           - "sts:AssumeRole"
       Path: '/'
