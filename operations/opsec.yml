@@ -374,6 +374,7 @@ Resources:
             - "events:*"
             - "elasticfilesystem:*"
             - "cloudfront:*"
+            - "ssm:GetParameter"
             Resource:
             - "*"
           - Effect: "Allow"
