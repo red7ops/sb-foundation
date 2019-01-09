@@ -430,9 +430,10 @@ Resources:
         Version: "2012-10-17"
         Statement:
         - Effect: 'Allow'
-          Principle:
+          Principal:
             Service:
             - "ec2.amazonaws.com"
+            - "ssm.amazonaws.com"
           Action:
           - "sts:AssumeRole"
       Path: '/'
