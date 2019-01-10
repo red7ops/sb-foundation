@@ -365,7 +365,6 @@ Resources:
             - "cloudwatch:PutMetricData"
             - "ssm:DescribeParameters"
             - "logs:*"
-            - "rds:DescribeEngineDefaultParameters"
             - "route53:GetChange"
             - "route53:GetHostedZone"
             - "route53:ListResourceRecordSets"
@@ -378,6 +377,7 @@ Resources:
             - "ssm:GetParameter"
             - "ssm:GetParameters"
             - "ssm:GetParametersByPath"
+            - "rds:*"
             Resource:
             - "*"
           - Effect: "Allow"
