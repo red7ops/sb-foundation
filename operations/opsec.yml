@@ -376,6 +376,7 @@ Resources:
             - "elasticfilesystem:*"
             - "cloudfront:*"
             - "ssm:GetParameter"
+            - "ssm:GetParameters"
             - "ssm:GetParametersByPath"
             Resource:
             - "*"
@@ -419,6 +420,7 @@ Resources:
             - "ecr:BatchGetImage"
             - "logs:CreateLogStream"
             - "logs:PutLogEvents"
+            - "ssm:GetParameters"
             - "ssm:GetParametersByPath"
             Resource:
             - "*"
@@ -450,6 +452,7 @@ Resources:
             - "s3:GetObjectVersion"
             - "ssm:GetParametersByPath"
             - "ssm:GetParameter"
+            - "ssm:GetParameters"
             - "ec2:Describe*"
             - "ec2:AttachNetworkInterface"
             - "ec2:AttachVolume"
