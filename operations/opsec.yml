@@ -465,6 +465,7 @@ Resources:
             - "ec2:CreateSnapshot"
             - "ec2messages:GetMessages"
             - "cloudwatch:PutMetricData"
+            - "logs:*"
             Resource:
             - "*"
   MongoProfile:
