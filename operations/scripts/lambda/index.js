@@ -93,7 +93,9 @@ function parseJson(json, cb) {
     try {
         parsed = JSON.parse(json);
     } catch (e) {
-        cb(e);
+        console.log("String is not JSON")
+        parsed = json;
+        // cb(e);
     }
 
     return parsed;
@@ -150,6 +152,7 @@ function createMessageObject(message, cb) {
         type = "ALARM";
     }
     else if (msgObj.hasOwnProperty("approval")) {
+
         msgObj.approval.customData = parseJson(msgObj.approval.customData, cb);
         type = "APPROVAL";
     }
