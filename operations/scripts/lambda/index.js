@@ -77,7 +77,7 @@ var util = require('util');
  * Approval custom data
  * @typedef {Object} ApprovalData
  * @property {string} channel
- * @property {boolean} isProd
+ * @property {string} message
  */
 
 /**
@@ -246,12 +246,12 @@ function addAttachments(msgObj, data) {
         case "APPROVAL":
             data.attachments = [
                 {
-                    "color": getColour(msgObj.approval.customData.isProd ? "ALERT" : "INFO"),
-                    "pretext": msgObj.approval.customData.isProd ? "Ready for Production" : "QA finished",
+                    "color": getColour("ALERT"),
+                    "pretext": msgObj.approval.customData.message,
                     "fields": [
                         {
-                            "title": msgObj.approval.customData.isProd ? "This will update production!" : "No changes will be made.",
-                            "value": util.format("<%s|Click to Approve>", msgObj.approval.approvalReviewLink)
+                            "title": "NB: This will update production!",
+                            "value": util.format("<%s|Click to go to Pipeline>", msgObj.approval.approvalReviewLink)
                         }
                     ]
                 }
