@@ -93,7 +93,7 @@ function parseJson(json, cb) {
     try {
         parsed = JSON.parse(json);
     } catch (e) {
-        console.log("String is not JSON")
+        console.log("String is not JSON");
         parsed = json;
         // cb(e);
     }
