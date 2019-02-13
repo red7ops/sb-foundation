@@ -232,8 +232,6 @@ Resources:
             - !Sub 'arn:aws:ec2:${AWS::Region}:${AWS::AccountId}:network-interface/*'
             Condition:
               StringEquals:
-                ec2:Subnet:
-                - !Sub 'arn:aws:ec2:${AWS::Region}:${AWS::AccountId}:subnet/*'
                 ec2:AuthorizedService: "codebuild.amazonaws.com"
           -
             Effect: "Allow"
