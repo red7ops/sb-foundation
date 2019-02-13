@@ -196,6 +196,7 @@ Resources:
           -
             Effect: "Allow"
             Action:
+            - "ec2:CreateNetworkInterface"
             - "ec2:Describe*"
             - "cloudformation:ValidateTemplate"
             - "elasticloadbalancing:Describe*"
