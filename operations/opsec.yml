@@ -385,6 +385,7 @@ Resources:
             - "autoscaling:DeleteLaunchConfiguration"
             - "autoscaling:Describe*"
             - "autoscaling:EnableMetricsCollection"
+            - "autoscaling:ResumeProcesses"
             - "autoscaling:SuspendProcesses"
             - "autoscaling:UpdateAutoScalingGroup"
             - "elasticloadbalancing:AddTags"
