@@ -388,6 +388,7 @@ Resources:
             - "autoscaling:EnableMetricsCollection"
             - "autoscaling:ResumeProcesses"
             - "autoscaling:SuspendProcesses"
+            - "autoscaling:TerminateInstanceInAutoScalingGroup"
             - "autoscaling:UpdateAutoScalingGroup"
             - "elasticloadbalancing:AddTags"
             - "elasticloadbalancing:Describe*"
