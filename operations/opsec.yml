@@ -384,6 +384,7 @@ Resources:
             - "autoscaling:DeleteAutoScalingGroup"
             - "autoscaling:DeleteLaunchConfiguration"
             - "autoscaling:Describe*"
+            - "autoscaling:DisableMetricsCollection"
             - "autoscaling:EnableMetricsCollection"
             - "autoscaling:ResumeProcesses"
             - "autoscaling:SuspendProcesses"
