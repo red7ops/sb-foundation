@@ -366,6 +366,8 @@ Resources:
             Resource:
             - !Sub 'arn:aws:iam::${AWS::AccountId}:role/SB-*'
             - !Sub 'arn:aws:iam::${AWS::AccountId}:instance-profile/SB-*'
+            - !Sub 'arn:aws:iam::${AWS::AccountId}:role/BP-*'
+            - !Sub 'arn:aws:iam::${AWS::AccountId}:instance-profile/BP-*'
           - Effect: "Allow"
             Action:
 #            - "ec2:AllocateAddress"
