@@ -475,6 +475,7 @@ Resources:
             - "ecr:BatchGetImage"
             - "logs:CreateLogStream"
             - "logs:PutLogEvents"
+            - "ssm:GetParameter"
             - "ssm:GetParameters"
             - "ssm:GetParametersByPath"
             Resource:
