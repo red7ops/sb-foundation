@@ -9,20 +9,9 @@ Metadata:
       - ParentSSHBastionStack
       - ParentAlertStack
     - Label:
-        default: 'Jenkins Parameters'
-      Parameters:
-      - JenkinsVersion
-    - Label:
         default: 'EC2 Parameters'
       Parameters:
       - KeyName
-      - SubDomainName
-      - VpcId
-      - PrivateSubnetA
-      - PrivateSubnetB
-      - PublicSubnetA
-      - PublicSubnetB
-      - InstanceAmi
     - Label:
         default: 'Master Parameters'
       Parameters:
@@ -30,8 +19,7 @@ Metadata:
       - MasterAdminPassword
       - MasterLogsRetentionInDays
       - MasterVolumeSize
-      - HostedZoneId
-      - HostedZoneName
+      - MasterLoadBalancerIdleTimeout
     - Label:
         default: 'Agent Parameters'
       Parameters:
@@ -39,31 +27,27 @@ Metadata:
       - AgentVolumeSize
       - AgentMaxSize
       - AgentMinSize
-      - AgentDesiredCapacity
       - AgentMaxBuildWaitTimeInSeconds
       - AgentLogsRetentionInDays
 Parameters:
   ParentSSHBastionStack:
-    Description: '(Optional) stack name of parent SSH bastion host/instance stack.'
+    Description: 'Stack name of parent SSH bastion host/instance stack.'
     Type: String
-    Default: ''
   ParentAlertStack:
-    Description: '(Optional) stack name of parent alert stack.'
+    Description: 'Stack name of parent alert stack.'
     Type: String
-    Default: ''
-  VpcId:
-    Description: 'Id of Vpc.'
-    Type: AWS::EC2::VPC::Id
   KeyName:
-    Description: 'Optional key pair of the ec2-user to establish a SSH connection to the Jenkins master and agents.'
-    Type: String
-    Default: ''
+    Description: 'Key pair of the ec2-user to establish a SSH connection to the Jenkins master and agents.'
+    Type: AWS::EC2::KeyPair::KeyName
+  VpcId:
+    Description: 'Id of VPC.'
+    Type: AWS::EC2::VPC::Id
   MasterInstanceType:
     Description: 'The instance type of the Jenkins master.'
     Type: String
     Default: 't2.micro'
   MasterAdminPassword:
-    Description: 'A password for the Jenkins master admin. MUST NOT BE CHANGED!'
+    Description: 'A password for the Jenkins master admin. Must not be changed!'
     Type: String
     NoEcho: true
     MinLength: 8
@@ -80,12 +64,18 @@ Parameters:
     ConstraintDescription: 'Must be in the range [8-1024]'
     MinValue: 8
     MaxValue: 1024
+  MasterLoadBalancerIdleTimeout:
+    Description: 'The idle timeout value, in seconds.'
+    Type: Number
+    Default: 60
+    MinValue: 1
+    MaxValue: 4000
   AgentInstanceType:
     Description: 'The instance type of the Jenkins agents.'
     Type: String
     Default: 't2.micro'
   AgentVolumeSize:
-    Description: 'The root volume size, in Gibibytes (GiB).  Keep in mind that Jenkins home lives on EFS.'
+    Description: 'The root volume size, in Gibibytes (GiB). Keep in mind that Jenkins home lives on EFS.'
     Type: Number
     Default: 8
     ConstraintDescription: 'Must be in the range [8-1024]'
@@ -99,12 +89,6 @@ Parameters:
     MinValue: 1
   AgentMinSize:
     Description: 'The minimum size of the agents Auto Scaling group.'
-    Type: Number
-    Default: 0
-    ConstraintDescription: 'Must be >= 0'
-    MinValue: 0
-  AgentDesiredCapacity:
-    Description: 'The desired start size of the agents Auto Scaling group.'
     Type: Number
     Default: 0
     ConstraintDescription: 'Must be >= 0'
@@ -124,7 +108,7 @@ Parameters:
   JenkinsVersion:
     Description: 'Jenkins version number'
     Type: String
-    Default: '2.107.3'
+    Default: '2.164.1'
   SubDomainName:
     Description: 'Name that is used to create the DNS entry ${SubDomainName}.${HostedZoneName}'
     Type: String
@@ -147,15 +131,12 @@ Parameters:
   HostedZoneName:
     Description: 'Name of Route53 hosted zone.'
     Type: String
-  InstanceAmi:
-    Description: 'Image for master and agents.'
-    Type: AWS::EC2::Image::Id
+  InstanceAMI:
+    Description: 'Image for master and agents. (SSM parameter)'
+    Type: AWS::SSM::Parameter::Value<AWS::EC2::Image::Id>
+    Default: '/aws/service/ami-amazon-linux-latest/amzn2-ami-hvm-x86_64-gp2'
 Conditions:
-  HasZeroAgents: !Equals [!Ref AgentDesiredCapacity, '0']
-  HasKeyName: !Not [!Equals [!Ref KeyName, '']]
-  HasSSHBastionSecurityGroup: !Not [!Equals [!Ref ParentSSHBastionStack, '']]
-  HasNotSSHBastionSecurityGroup: !Equals [!Ref ParentSSHBastionStack, '']
-  HasAlertTopic: !Not [!Equals [!Ref ParentAlertStack, '']]
+  HasZeroAgents: !Equals [!Ref AgentMinSize, '0']
 Resources:
   MasterStorageSG:
     Type: 'AWS::EC2::SecurityGroup'
@@ -175,7 +156,6 @@ Resources:
         Value: 'jenkins-master-storage'
       PerformanceMode: generalPurpose
   MasterStoragePercentIOLimitTooHighAlarm:
-    Condition: HasAlertTopic
     Type: 'AWS::CloudWatch::Alarm'
     Properties:
       AlarmDescription: 'Average IO utilization over last 10 minutes higher than 80%'
@@ -192,7 +172,6 @@ Resources:
       - Name: FileSystemId
         Value: !Ref MasterStorage
   MasterStorageBurstCreditBalanceTooLowAlarm:
-    Condition: HasAlertTopic
     Type: 'AWS::CloudWatch::Alarm'
     Properties:
       AlarmDescription: 'EFS file system is running out of burst credits. You can expect a significant performance drop in the next hour.'
@@ -215,7 +194,6 @@ Resources:
       SecurityGroups:
       - !Ref MasterStorageSG
       SubnetId: !Ref PrivateSubnetA
-
   MasterStorageMountTargetB:
     Type: 'AWS::EFS::MountTarget'
     Properties:
@@ -237,7 +215,6 @@ Resources:
       ToPort: 80
       CidrIp: '0.0.0.0/0'
   MasterHTTPCodeELB5XXTooHighAlarm:
-    Condition: HasAlertTopic
     Type: 'AWS::CloudWatch::Alarm'
     Properties:
       AlarmDescription: 'Application load balancer returns 5XX HTTP status codes'
@@ -254,7 +231,6 @@ Resources:
       - Name: LoadBalancer
         Value: !GetAtt MasterELB.LoadBalancerFullName
   MasterHTTPCodeTarget5XXTooHighAlarm:
-    Condition: HasAlertTopic
     Type: 'AWS::CloudWatch::Alarm'
     Properties:
       AlarmDescription: 'Application load balancer receives 5XX HTTP status codes from targets'
@@ -271,7 +247,6 @@ Resources:
       - Name: LoadBalancer
         Value: !GetAtt MasterELB.LoadBalancerFullName
   MasterRejectedConnectionCountTooHighAlarm:
-    Condition: HasAlertTopic
     Type: 'AWS::CloudWatch::Alarm'
     Properties:
       AlarmDescription: 'Application load balancer rejected connections because the load balancer had reached its maximum number of connections'
@@ -288,7 +263,6 @@ Resources:
       - Name: LoadBalancer
         Value: !GetAtt MasterELB.LoadBalancerFullName
   MasterTargetConnectionErrorCountTooHighAlarm:
-    Condition: HasAlertTopic
     Type: 'AWS::CloudWatch::Alarm'
     Properties:
       AlarmDescription: 'Application load balancer could not connect to targets'
@@ -316,6 +290,11 @@ Resources:
   MasterELB:
     Type: 'AWS::ElasticLoadBalancingV2::LoadBalancer'
     Properties:
+      LoadBalancerAttributes:
+      - Key: 'idle_timeout.timeout_seconds'
+        Value: !Ref MasterLoadBalancerIdleTimeout
+      - Key: 'routing.http2.enabled'
+        Value: 'true'
       Scheme: internet-facing
       SecurityGroups:
       - !Ref MasterELBSG
@@ -324,13 +303,13 @@ Resources:
       - !Ref PublicSubnetB
       Tags:
       - Key: Name
-        Value: !Sub '${AWS::StackName}-master'
-  MasterELBTargetGroup:
+        Value: 'jenkins-master'
+  MasterELBTargetGroup: # not monitored, but MasterELB is monitored!
     Type: 'AWS::ElasticLoadBalancingV2::TargetGroup'
     Properties:
       HealthCheckIntervalSeconds: 30
       HealthCheckPath: '/login'
-      HealthCheckPort: 8080
+      HealthCheckPort: '8080'
       HealthCheckProtocol: HTTP
       HealthCheckTimeoutSeconds: 25
       HealthyThresholdCount: 2
@@ -345,7 +324,7 @@ Resources:
       VpcId: !Ref VpcId
       TargetGroupAttributes:
       - Key: 'deregistration_delay.timeout_seconds'
-        Value: 30
+        Value: '30'
   MasterELBListener:
     Type: 'AWS::ElasticLoadBalancingV2::Listener'
     Properties:
@@ -374,6 +353,8 @@ Resources:
           Action:
           - 'sts:AssumeRole'
       Path: '/'
+      ManagedPolicyArns:
+      - 'arn:aws:iam::aws:policy/service-role/AmazonEC2RoleforSSM' # TODO get rid of managed policy
       Policies:
       - PolicyName: cloudwatch
         PolicyDocument:
@@ -400,6 +381,7 @@ Resources:
             Action:
             - 'sqs:DeleteMessage'
             - 'sqs:ReceiveMessage'
+            - 'sqs:ChangeMessageVisibility'
             Resource: !GetAtt 'AgentTerminatingLifecycleHookQueue.Arn'
       - PolicyName: logs
         PolicyDocument:
@@ -407,12 +389,10 @@ Resources:
           Statement:
           - Effect: Allow
             Action:
-            - 'logs:CreateLogGroup'
             - 'logs:CreateLogStream'
             - 'logs:PutLogEvents'
             - 'logs:DescribeLogStreams'
-            Resource:
-            - 'arn:aws:logs:*:*:*'
+            Resource: !GetAtt 'MasterLogs.Arn'
       - PolicyName: sts
         PolicyDocument:
           Version: '2012-10-17'
@@ -442,7 +422,6 @@ Resources:
         IpProtocol: tcp
   MasterSGInSSHBastion:
     Type: 'AWS::EC2::SecurityGroupIngress'
-    Condition: HasSSHBastionSecurityGroup
     Properties:
       GroupId: !Ref MasterSG
       IpProtocol: tcp
@@ -450,15 +429,6 @@ Resources:
       ToPort: 22
       SourceSecurityGroupId:
         'Fn::ImportValue': !Sub '${ParentSSHBastionStack}-SecurityGroup'
-  MasterSGInSSHWorld:
-    Type: 'AWS::EC2::SecurityGroupIngress'
-    Condition: HasNotSSHBastionSecurityGroup
-    Properties:
-      GroupId: !Ref MasterSG
-      IpProtocol: tcp
-      FromPort: 22
-      ToPort: 22
-      CidrIp: '0.0.0.0/0'
   MasterLogs:
     Type: 'AWS::Logs::LogGroup'
     Properties:
@@ -466,11 +436,12 @@ Resources:
   MasterLC:
     Type: 'AWS::AutoScaling::LaunchConfiguration'
     Metadata:
-      AWS::CloudFormation::Init:
+      'AWS::CloudFormation::Init':
         configSets:
           default:
           - awslogs
           - mount
+          - extras
           - install
           - setup
           - custom
@@ -493,30 +464,28 @@ Resources:
               content: !Sub |
                 [general]
                 state_file = /var/lib/awslogs/agent-state
-                [/var/log/messages]
-                datetime_format = %b %d %H:%M:%S
-                file = /var/log/messages
-                log_stream_name = {instance_id}/var/log/messages
-                log_group_name = ${MasterLogs}
-                [/var/log/secure]
-                datetime_format = %b %d %H:%M:%S
-                file = /var/log/secure
-                log_stream_name = {instance_id}/var/log/secure
-                log_group_name = ${MasterLogs}
-                [/var/log/cron]
-                datetime_format = %b %d %H:%M:%S
-                file = /var/log/cron
-                log_stream_name = {instance_id}/var/log/cron
-                log_group_name = ${MasterLogs}
-                [/var/log/cloud-init.log]
-                datetime_format = %b %d %H:%M:%S
-                file = /var/log/cloud-init.log
-                log_stream_name = {instance_id}/var/log/cloud-init.log
-                log_group_name = ${MasterLogs}
-                [/var/log/cfn-init.log]
+                [/var/log/amazon/ssm/amazon-ssm-agent.log]
                 datetime_format = %Y-%m-%d %H:%M:%S
-                file = /var/log/cfn-init.log
-                log_stream_name = {instance_id}/var/log/cfn-init.log
+                file = /var/log/amazon/ssm/amazon-ssm-agent.log
+                log_stream_name = {instance_id}/var/log/amazon/ssm/amazon-ssm-agent.log
+                log_group_name = ${MasterLogs}
+                [/var/log/amazon/ssm/errors.log]
+                datetime_format = %Y-%m-%d %H:%M:%S
+                file = /var/log/amazon/ssm/errors.log
+                log_stream_name = {instance_id}/var/log/amazon/ssm/errors.log
+                log_group_name = ${MasterLogs}
+                [/var/log/audit/audit.log]
+                file = /var/log/audit/audit.log
+                log_stream_name = {instance_id}/var/log/audit/audit.log
+                log_group_name = ${MasterLogs}
+                [/var/log/awslogs.log]
+                datetime_format = %Y-%m-%d %H:%M:%S
+                file = /var/log/awslogs.log
+                log_stream_name = {instance_id}/var/log/awslogs.log
+                log_group_name = ${MasterLogs}
+                [/var/log/boot.log]
+                file = /var/log/boot.log
+                log_stream_name = {instance_id}/var/log/boot.log
                 log_group_name = ${MasterLogs}
                 [/var/log/cfn-hup.log]
                 datetime_format = %Y-%m-%d %H:%M:%S
@@ -528,14 +497,73 @@ Resources:
                 file = /var/log/cfn-init-cmd.log
                 log_stream_name = {instance_id}/var/log/cfn-init-cmd.log
                 log_group_name = ${MasterLogs}
+                [/var/log/cfn-init.log]
+                datetime_format = %Y-%m-%d %H:%M:%S
+                file = /var/log/cfn-init.log
+                log_stream_name = {instance_id}/var/log/cfn-init.log
+                log_group_name = ${MasterLogs}
+                [/var/log/cfn-wire.log]
+                datetime_format = %Y-%m-%d %H:%M:%S
+                file = /var/log/cfn-wire.log
+                log_stream_name = {instance_id}/var/log/cfn-wire.log
+                log_group_name = ${MasterLogs}
                 [/var/log/cloud-init-output.log]
                 file = /var/log/cloud-init-output.log
                 log_stream_name = {instance_id}/var/log/cloud-init-output.log
+                log_group_name = ${MasterLogs}
+                [/var/log/cloud-init.log]
+                datetime_format = %b %d %H:%M:%S
+                file = /var/log/cloud-init.log
+                log_stream_name = {instance_id}/var/log/cloud-init.log
+                log_group_name = ${MasterLogs}
+                [/var/log/cron]
+                datetime_format = %b %d %H:%M:%S
+                file = /var/log/cron
+                log_stream_name = {instance_id}/var/log/cron
                 log_group_name = ${MasterLogs}
                 [/var/log/dmesg]
                 file = /var/log/dmesg
                 log_stream_name = {instance_id}/var/log/dmesg
                 log_group_name = ${MasterLogs}
+                [/var/log/grubby_prune_debug]
+                file = /var/log/grubby_prune_debug
+                log_stream_name = {instance_id}/var/log/grubby_prune_debug
+                log_group_name = ${MasterLogs}
+                [/var/log/maillog]
+                datetime_format = %b %d %H:%M:%S
+                file = /var/log/maillog
+                log_stream_name = {instance_id}/var/log/maillog
+                log_group_name = ${MasterLogs}
+                [/var/log/messages]
+                datetime_format = %b %d %H:%M:%S
+                file = /var/log/messages
+                log_stream_name = {instance_id}/var/log/messages
+                log_group_name = ${MasterLogs}
+                [/var/log/secure]
+                datetime_format = %b %d %H:%M:%S
+                file = /var/log/secure
+                log_stream_name = {instance_id}/var/log/secure
+                log_group_name = ${MasterLogs}
+                [/var/log/yum.log]
+                datetime_format = %b %d %H:%M:%S
+                file = /var/log/yum.log
+                log_stream_name = {instance_id}/var/log/yum.log
+                log_group_name = ${MasterLogs}
+              mode: '000644'
+              owner: root
+              group: root
+            '/etc/awslogs/config/efs.conf':
+              content: !Sub |
+                [/var/log/amazon/efs/mount.log]
+                datetime_format = %Y-%m-%d %H:%M:%S
+                file = /var/log/amazon/efs/mount.log
+                log_stream_name = {instance_id}/var/log/amazon/efs/mount.log
+                log_group_name = ${MasterLogs}
+              mode: '000644'
+              owner: root
+              group: root
+            '/etc/awslogs/config/jenkins-master.conf':
+              content: !Sub |
                 [/var/log/jenkins/jenkins.log]
                 datetime_format = %d %b %Y %H:%M:%S
                 multi_line_start_pattern = {datetime_format}
@@ -547,7 +575,7 @@ Resources:
               group: root
           services:
             sysvinit:
-              awslogs:
+              awslogsd:
                 enabled: true
                 ensureRunning: true
                 packages:
@@ -556,34 +584,44 @@ Resources:
                 files:
                 - '/etc/awslogs/awslogs.conf'
                 - '/etc/awslogs/awscli.conf'
+                - '/etc/awslogs/config/efs.conf'
+                - '/etc/awslogs/config/jenkins-master.conf'
+        extras:
+          commands:
+            'a_enable_docker':
+              command: 'amazon-linux-extras enable docker=18.06.1'
+              test: "! grep -Fxq '[amzn2extra-docker]' /etc/yum.repos.d/amzn2-extras.repo"
+            'b_enable_corretto8':
+              command: 'amazon-linux-extras enable corretto8'
+              test: "! grep -Fxq '[amzn2extra-corretto8]' /etc/yum.repos.d/amzn2-extras.repo"
         mount:
           packages:
             yum:
               'nfs-utils': []
+              'ruby': []
             rubygems:
-              'aws-sdk':
-              - '3.0.1'
-              daemons:
-              - '1.2.4'
+              'aws-sdk-autoscaling': ['1.13.0']
+              'aws-sdk-sqs': ['1.10.0']
+              daemons: ['1.2.6']
           commands:
             'a_groupadd':
               command: 'groupadd -g 497 jenkins'
               test: 'if grep -q jenkins: /etc/group; then exit 1; else exit 0; fi'
             'b_useradd':
-              command: 'adduser -u 498 -g 497 -s /bin/false -d /var/lib/jenkins -c ''Jenkins Continuous Delivery Server'' jenkins'
+              command: 'adduser -u 498 -g 497 -s /bin/false -d /var/lib/jenkins -c ''Jenkins Continuous Integration Server'' jenkins'
               test: 'if grep -q jenkins: /etc/passwd; then exit 1; else exit 0; fi'
             'c_mountpoint_mkdir':
               command: 'mkdir /var/lib/jenkins && chown -R jenkins:jenkins /var/lib/jenkins'
               test: '[ ! -d /var/lib/jenkins ]'
             'd_mountpoint_mount':
-              command: !Sub 'while ! nc -z ${MasterStorage}.efs.${AWS::Region}.amazonaws.com 2049; do sleep 10; done && sleep 10 && mount -t nfs4 -o nfsvers=4.1,rsize=1048576,wsize=1048576,hard,timeo=600,retrans=2 "${MasterStorage}.efs.${AWS::Region}.amazonaws.com:/" /var/lib/jenkins'
+              command: !Sub 'while ! (echo > /dev/tcp/${MasterStorage}.efs.${AWS::Region}.amazonaws.com/2049) >/dev/null 2>&1; do sleep 10; done && sleep 10 && mount -t nfs4 -o nfsvers=4.1,rsize=1048576,wsize=1048576,hard,timeo=600,retrans=2 "${MasterStorage}.efs.${AWS::Region}.amazonaws.com:/" /var/lib/jenkins'
               test: 'if mount | grep -q /var/lib/jenkins; then exit 1; else exit 0; fi'
         install:
           packages:
             rpm:
               jenkins: !Sub 'https://pkg.jenkins.io/redhat-stable/jenkins-${JenkinsVersion}-1.1.noarch.rpm'
             yum:
-              'java-1.8.0-openjdk': []
+              'java-1.8.0-amazon-corretto': []
           files:
             '/etc/cfn/cfn-hup.conf':
               content: !Sub |
@@ -650,7 +688,8 @@ Resources:
               content: |
                 #!/usr/bin/env ruby
                 require 'net/http'
-                require 'aws-sdk'
+                require 'aws-sdk-autoscaling'
+                require 'aws-sdk-sqs'
                 require 'json'
                 require 'uri'
                 require 'yaml'
@@ -714,14 +753,15 @@ Resources:
                     return false
                   end
                 end
-                def awaitAgentIdle(agent)
+                def awaitAgentIdle(poller, message, agent)
                   endTime = Time.now.to_i + $conf['maxWaitInSeconds']
                   while Time.now.to_i < endTime do
                     if isAgentIdle agent
                       $log.info "agent #{agent} is idle"
                       return true
                     end
-                    sleep 5 # seconds
+                    poller.change_message_visibility_timeout(message, 30)
+                    sleep 15 # seconds
                   end
                   $log.error "agent #{agent} is not idle, but wait time elapsed"
                   return false
@@ -758,7 +798,7 @@ Resources:
                         if body['LifecycleTransition'] == 'autoscaling:EC2_INSTANCE_TERMINATING'
                           $log.info "lifecycle transition for agent #{body['EC2InstanceId']}"
                           takeAgentTemporarilyOffline body['EC2InstanceId']
-                          awaitAgentIdle body['EC2InstanceId']
+                          awaitAgentIdle poller, msg, body['EC2InstanceId']
                           deleteAgent body['EC2InstanceId']
                           completeLifecycleAction body['LifecycleActionToken'], body['LifecycleHookName'], body['AutoScalingGroupName']
                         else
@@ -788,9 +828,6 @@ Resources:
               mode: '000500'
               owner: root
               group: root
-          commands:
-            'a_alternatives':
-              command: '/usr/sbin/alternatives --set java /usr/lib/jvm/jre-1.8.0-openjdk.x86_64/bin/java'
           services:
             sysvinit:
               cfn-hup:
@@ -799,6 +836,9 @@ Resources:
                 files:
                 - '/etc/cfn/cfn-hup.conf'
                 - '/etc/cfn/hooks.d/cfn-auto-reloader.conf'
+              amazon-ssm-agent:
+                enabled: true
+                ensureRunning: true
               lifecycle-poller:
                 enabled: true
                 ensureRunning: true
@@ -814,6 +854,7 @@ Resources:
                 jqs-monitoring
                 ant
                 build-timeout
+                build-monitor-plugin
                 docker-workflow
                 credentials-binding
                 email-ext
@@ -831,33 +872,59 @@ Resources:
               mode: '000400'
               owner: root
               group: root
-            '/etc/cron.d/cloudwatch-build-active':
+            '/opt/cloudwatch-build-active.sh':
               content: !Sub |
+                #!/bin/bash
+                VALUE="$(curl -s -m 60 -u 'admin:${MasterAdminPassword}' 'http://localhost:8080/computer/api/xml?xpath=*/busyExecutors' | sed -r 's/<[/a-zA-Z]*>//g')"
+                aws --region ${AWS::Region} cloudwatch put-metric-data --namespace ${AWS::StackName} --metric-name BuildActive --value ${!VALUE} --unit Count
+              mode: '000700'
+              owner: root
+              group: root
+            '/opt/cloudwatch-build-queue.sh':
+              content: !Sub |
+                #!/bin/bash
+                VALUE="$(curl -s -m 60 -u 'admin:${MasterAdminPassword}' 'http://localhost:8080/jqs-monitoring/api/xml?xpath=/JQSMonitoring/buildQueue/numberOfJobs' | sed -r 's/<[/a-zA-Z]*>//g')"
+                aws --region ${AWS::Region} cloudwatch put-metric-data --namespace ${AWS::StackName} --metric-name BuildQueue --value ${!VALUE} --unit Count
+              mode: '000700'
+              owner: root
+              group: root
+            '/opt/cloudwatch-build-active-queue.sh':
+              content: !Sub |
+                #!/bin/bash
+                VALUE1="$(curl -s -m 60 -u 'admin:${MasterAdminPassword}' 'http://localhost:8080/computer/api/xml?xpath=*/busyExecutors' | sed -r 's/<[/a-zA-Z]*>//g')"
+                VALUE2="$(curl -s -m 60 -u 'admin:${MasterAdminPassword}' 'http://localhost:8080/jqs-monitoring/api/xml?xpath=/JQSMonitoring/buildQueue/numberOfJobs' | sed -r 's/<[/a-zA-Z]*>//g')"
+                VALUE=$(( $VALUE1 + $VALUE2 ))
+                aws --region ${AWS::Region} cloudwatch put-metric-data --namespace ${AWS::StackName} --metric-name BuildActiveQueue --value ${!VALUE} --unit Count
+              mode: '000700'
+              owner: root
+              group: root
+            '/etc/cron.d/cloudwatch-build-active':
+              content: |
                 SHELL=/bin/bash
                 PATH=/sbin:/bin:/usr/sbin:/usr/bin:/opt/aws/bin
                 MAILTO=root
                 HOME=/
-                * * * * * root aws --region ${AWS::Region} cloudwatch put-metric-data --namespace ${AWS::StackName} --metric-name BuildActive --value $(curl -s -m 60 -u 'admin:${MasterAdminPassword}' 'http://localhost:8080/computer/api/xml?xpath=*/busyExecutors' | sed -r 's/<[/a-zA-Z]*>//g') --unit Count
+                * * * * * root /opt/cloudwatch-build-active.sh
               mode: '000600'
               owner: root
               group: root
             '/etc/cron.d/cloudwatch-build-queue':
-              content: !Sub |
+              content: |
                 SHELL=/bin/bash
                 PATH=/sbin:/bin:/usr/sbin:/usr/bin:/opt/aws/bin
                 MAILTO=root
                 HOME=/
-                * * * * * root aws --region ${AWS::Region} cloudwatch put-metric-data --namespace ${AWS::StackName} --metric-name BuildQueue --value $(curl -s -m 60 -u 'admin:${MasterAdminPassword}' 'http://localhost:8080/jqs-monitoring/api/xml?xpath=/JQSMonitoring/buildQueue/numberOfJobs' | sed -r 's/<[/a-zA-Z]*>//g') --unit Count
+                * * * * * root /opt/cloudwatch-build-queue.sh
               mode: '000600'
               owner: root
               group: root
-            '/etc/cron.d/security-updates':
-              content: !Sub |
+            '/etc/cron.d/cloudwatch-build-active-queue':
+              content: |
                 SHELL=/bin/bash
                 PATH=/sbin:/bin:/usr/sbin:/usr/bin:/opt/aws/bin
                 MAILTO=root
                 HOME=/
-                0 4 * * * root yum update -y --security
+                * * * * * root /opt/cloudwatch-build-active-queue.sh
               mode: '000600'
               owner: root
               group: root
@@ -899,7 +966,7 @@ Resources:
               command: 'service jenkins stop'
               test: '[ ! -f /var/lib/jenkins/setup_done.txt ]'
             'z_create_setup_done_file':
-              command: 'echo "Setup done. Do not delete this file!" > /var/lib/jenkins/setup_done.txt'
+              command: 'echo "Setup done. Don not delete this file." > /var/lib/jenkins/setup_done.txt'
               test: '[ ! -f /var/lib/jenkins/setup_done.txt ]'
         custom:
           packages:
@@ -927,12 +994,12 @@ Resources:
                   rpm:
                   - jenkins
     Properties:
-      ImageId: !Ref InstanceAmi
+      ImageId: !Ref InstanceAMI
       IamInstanceProfile: !Ref MasterIP
       InstanceType: !Ref MasterInstanceType
       SecurityGroups:
       - !Ref MasterSG
-      KeyName: !If [HasKeyName, !Ref KeyName, !Ref 'AWS::NoValue']
+      KeyName: !Ref KeyName
       BlockDeviceMappings:
       - DeviceName: '/dev/xvda'
         Ebs:
@@ -950,19 +1017,16 @@ Resources:
     - MasterStorageMountTargetB
     Properties:
       LaunchConfigurationName: !Ref MasterLC
-      MinSize: 1
-      MaxSize: 1
-      DesiredCapacity: 1
+      MinSize: '1'
+      MaxSize: '1'
       HealthCheckGracePeriod: 900
       HealthCheckType: ELB
-      NotificationConfigurations: !If
-      - HasAlertTopic
-      - - NotificationTypes:
-          - 'autoscaling:EC2_INSTANCE_LAUNCH_ERROR'
-          - 'autoscaling:EC2_INSTANCE_TERMINATE_ERROR'
-          TopicARN:
-            'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'
-      - !Ref 'AWS::NoValue'
+      NotificationConfigurations:
+      - NotificationTypes:
+        - 'autoscaling:EC2_INSTANCE_LAUNCH_ERROR'
+        - 'autoscaling:EC2_INSTANCE_TERMINATE_ERROR'
+        TopicARN:
+          'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'
       VPCZoneIdentifier:
       - !Ref PrivateSubnetA
       - !Ref PrivateSubnetB
@@ -970,7 +1034,7 @@ Resources:
       - !Ref MasterELBTargetGroup
       Tags:
       - Key: Name
-        Value: !Sub '${AWS::StackName}-master'
+        Value: 'jenkins-master'
         PropagateAtLaunch: true
     CreationPolicy:
       ResourceSignal:
@@ -986,7 +1050,6 @@ Resources:
         - ScheduledActions
         WaitOnResourceSignals: true
   MasterCPUTooHighAlarm:
-    Condition: HasAlertTopic
     Type: 'AWS::CloudWatch::Alarm'
     Properties:
       AlarmDescription: 'Master average CPU utilization over last 10 minutes higher than 80%'
@@ -1007,7 +1070,7 @@ Resources:
     Properties:
       HealthCheckIntervalSeconds: 30
       HealthCheckPath: '/'
-      HealthCheckPort: 8080
+      HealthCheckPort: '8080'
       HealthCheckProtocol: HTTP
       HealthCheckTimeoutSeconds: 25
       HealthyThresholdCount: 2
@@ -1022,28 +1085,8 @@ Resources:
       VpcId: !Ref VpcId
       TargetGroupAttributes:
       - Key: 'deregistration_delay.timeout_seconds'
-        Value: 15
-  AgentHTTPCodeELB5XXTooHighAlarm:
-    Condition: HasAlertTopic
-    Type: 'AWS::CloudWatch::Alarm'
-    Properties:
-      AlarmDescription: 'Application load balancer returns 5XX HTTP status codes'
-      Namespace: 'AWS/ApplicationELB'
-      MetricName: HTTPCode_ELB_5XX_Count
-      Statistic: Sum
-      Period: 60
-      EvaluationPeriods: 1
-      ComparisonOperator: GreaterThanThreshold
-      Threshold: 0
-      AlarmActions:
-      - 'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'
-      Dimensions:
-      - Name: LoadBalancer
-        Value: !GetAtt 'MasterELB.LoadBalancerFullName'
-      - Name: TargetGroup
-        Value: !GetAtt AgentELBTargetGroup.TargetGroupFullName
+        Value: '15'
   AgentHTTPCodeTarget5XXTooHighAlarm:
-    Condition: HasAlertTopic
     Type: 'AWS::CloudWatch::Alarm'
     Properties:
       AlarmDescription: 'Application load balancer receives 5XX HTTP status codes from targets'
@@ -1061,27 +1104,7 @@ Resources:
         Value: !GetAtt 'MasterELB.LoadBalancerFullName'
       - Name: TargetGroup
         Value: !GetAtt AgentELBTargetGroup.TargetGroupFullName
-  AgentRejectedConnectionCountTooHighAlarm:
-    Condition: HasAlertTopic
-    Type: 'AWS::CloudWatch::Alarm'
-    Properties:
-      AlarmDescription: 'Application load balancer rejected connections because the load balancer had reached its maximum number of connections'
-      Namespace: 'AWS/ApplicationELB'
-      MetricName: RejectedConnectionCount
-      Statistic: Sum
-      Period: 60
-      EvaluationPeriods: 1
-      ComparisonOperator: GreaterThanThreshold
-      Threshold: 0
-      AlarmActions:
-      - 'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'
-      Dimensions:
-      - Name: LoadBalancer
-        Value: !GetAtt 'MasterELB.LoadBalancerFullName'
-      - Name: TargetGroup
-        Value: !GetAtt AgentELBTargetGroup.TargetGroupFullName
   AgentTargetConnectionErrorCountTooHighAlarm:
-    Condition: HasAlertTopic
     Type: 'AWS::CloudWatch::Alarm'
     Properties:
       AlarmDescription: 'Application load balancer could not connect to targets'
@@ -1127,6 +1150,8 @@ Resources:
           Action:
           - 'sts:AssumeRole'
       Path: /
+      ManagedPolicyArns:
+      - 'arn:aws:iam::aws:policy/service-role/AmazonEC2RoleforSSM'
       Policies:
       - PolicyName: ec2
         PolicyDocument:
@@ -1144,12 +1169,10 @@ Resources:
           Statement:
           - Effect: Allow
             Action:
-            - 'logs:CreateLogGroup'
             - 'logs:CreateLogStream'
             - 'logs:PutLogEvents'
             - 'logs:DescribeLogStreams'
-            Resource:
-            - arn:aws:logs:*:*:*
+            Resource: !GetAtt 'AgentLogs.Arn'
       - PolicyName: sts
         PolicyDocument:
           Version: '2012-10-17'
@@ -1171,7 +1194,6 @@ Resources:
         IpProtocol: tcp
   AgentSGInSSHBastion:
     Type: 'AWS::EC2::SecurityGroupIngress'
-    Condition: HasSSHBastionSecurityGroup
     Properties:
       GroupId: !Ref AgentSG
       IpProtocol: tcp
@@ -1179,15 +1201,6 @@ Resources:
       ToPort: 22
       SourceSecurityGroupId:
         'Fn::ImportValue': !Sub '${ParentSSHBastionStack}-SecurityGroup'
-  AgentSGInSSHWorld:
-    Type: 'AWS::EC2::SecurityGroupIngress'
-    Condition: HasNotSSHBastionSecurityGroup
-    Properties:
-      GroupId: !Ref AgentSG
-      IpProtocol: tcp
-      FromPort: 22
-      ToPort: 22
-      CidrIp: '0.0.0.0/0'
   AgentLogs:
     Type: 'AWS::Logs::LogGroup'
     Properties:
@@ -1195,10 +1208,11 @@ Resources:
   AgentLC:
     Type: 'AWS::AutoScaling::LaunchConfiguration'
     Metadata:
-      AWS::CloudFormation::Init:
+      'AWS::CloudFormation::Init':
         configSets:
           default:
           - awslogs
+          - extras
           - install
           - setup
           - custom
@@ -1221,30 +1235,28 @@ Resources:
               content: !Sub |
                 [general]
                 state_file = /var/lib/awslogs/agent-state
-                [/var/log/messages]
-                datetime_format = %b %d %H:%M:%S
-                file = /var/log/messages
-                log_stream_name = {instance_id}/var/log/messages
-                log_group_name = ${AgentLogs}
-                [/var/log/secure]
-                datetime_format = %b %d %H:%M:%S
-                file = /var/log/secure
-                log_stream_name = {instance_id}/var/log/secure
-                log_group_name = ${AgentLogs}
-                [/var/log/cron]
-                datetime_format = %b %d %H:%M:%S
-                file = /var/log/cron
-                log_stream_name = {instance_id}/var/log/cron
-                log_group_name = ${AgentLogs}
-                [/var/log/cloud-init.log]
-                datetime_format = %b %d %H:%M:%S
-                file = /var/log/cloud-init.log
-                log_stream_name = {instance_id}/var/log/cloud-init.log
-                log_group_name = ${AgentLogs}
-                [/var/log/cfn-init.log]
+                [/var/log/amazon/ssm/amazon-ssm-agent.log]
                 datetime_format = %Y-%m-%d %H:%M:%S
-                file = /var/log/cfn-init.log
-                log_stream_name = {instance_id}/var/log/cfn-init.log
+                file = /var/log/amazon/ssm/amazon-ssm-agent.log
+                log_stream_name = {instance_id}/var/log/amazon/ssm/amazon-ssm-agent.log
+                log_group_name = ${AgentLogs}
+                [/var/log/amazon/ssm/errors.log]
+                datetime_format = %Y-%m-%d %H:%M:%S
+                file = /var/log/amazon/ssm/errors.log
+                log_stream_name = {instance_id}/var/log/amazon/ssm/errors.log
+                log_group_name = ${AgentLogs}
+                [/var/log/audit/audit.log]
+                file = /var/log/audit/audit.log
+                log_stream_name = {instance_id}/var/log/audit/audit.log
+                log_group_name = ${AgentLogs}
+                [/var/log/awslogs.log]
+                datetime_format = %Y-%m-%d %H:%M:%S
+                file = /var/log/awslogs.log
+                log_stream_name = {instance_id}/var/log/awslogs.log
+                log_group_name = ${AgentLogs}
+                [/var/log/boot.log]
+                file = /var/log/boot.log
+                log_stream_name = {instance_id}/var/log/boot.log
                 log_group_name = ${AgentLogs}
                 [/var/log/cfn-hup.log]
                 datetime_format = %Y-%m-%d %H:%M:%S
@@ -1256,14 +1268,63 @@ Resources:
                 file = /var/log/cfn-init-cmd.log
                 log_stream_name = {instance_id}/var/log/cfn-init-cmd.log
                 log_group_name = ${AgentLogs}
+                [/var/log/cfn-init.log]
+                datetime_format = %Y-%m-%d %H:%M:%S
+                file = /var/log/cfn-init.log
+                log_stream_name = {instance_id}/var/log/cfn-init.log
+                log_group_name = ${AgentLogs}
+                [/var/log/cfn-wire.log]
+                datetime_format = %Y-%m-%d %H:%M:%S
+                file = /var/log/cfn-wire.log
+                log_stream_name = {instance_id}/var/log/cfn-wire.log
+                log_group_name = ${AgentLogs}
                 [/var/log/cloud-init-output.log]
                 file = /var/log/cloud-init-output.log
                 log_stream_name = {instance_id}/var/log/cloud-init-output.log
+                log_group_name = ${AgentLogs}
+                [/var/log/cloud-init.log]
+                datetime_format = %b %d %H:%M:%S
+                file = /var/log/cloud-init.log
+                log_stream_name = {instance_id}/var/log/cloud-init.log
+                log_group_name = ${AgentLogs}
+                [/var/log/cron]
+                datetime_format = %b %d %H:%M:%S
+                file = /var/log/cron
+                log_stream_name = {instance_id}/var/log/cron
                 log_group_name = ${AgentLogs}
                 [/var/log/dmesg]
                 file = /var/log/dmesg
                 log_stream_name = {instance_id}/var/log/dmesg
                 log_group_name = ${AgentLogs}
+                [/var/log/grubby_prune_debug]
+                file = /var/log/grubby_prune_debug
+                log_stream_name = {instance_id}/var/log/grubby_prune_debug
+                log_group_name = ${AgentLogs}
+                [/var/log/maillog]
+                datetime_format = %b %d %H:%M:%S
+                file = /var/log/maillog
+                log_stream_name = {instance_id}/var/log/maillog
+                log_group_name = ${AgentLogs}
+                [/var/log/messages]
+                datetime_format = %b %d %H:%M:%S
+                file = /var/log/messages
+                log_stream_name = {instance_id}/var/log/messages
+                log_group_name = ${AgentLogs}
+                [/var/log/secure]
+                datetime_format = %b %d %H:%M:%S
+                file = /var/log/secure
+                log_stream_name = {instance_id}/var/log/secure
+                log_group_name = ${AgentLogs}
+                [/var/log/yum.log]
+                datetime_format = %b %d %H:%M:%S
+                file = /var/log/yum.log
+                log_stream_name = {instance_id}/var/log/yum.log
+                log_group_name = ${AgentLogs}
+              mode: '000644'
+              owner: root
+              group: root
+            '/etc/awslogs/config/jenkins-agent.conf':
+              content: !Sub |
                 [/var/lib/jenkins/screenlog]
                 file = /var/lib/jenkins/screenlog.*
                 log_stream_name = {instance_id}/var/lib/jenkins/screenlog
@@ -1273,7 +1334,7 @@ Resources:
               group: root
           services:
             sysvinit:
-              awslogs:
+              awslogsd:
                 enabled: true
                 ensureRunning: true
                 packages:
@@ -1282,10 +1343,11 @@ Resources:
                 files:
                 - '/etc/awslogs/awslogs.conf'
                 - '/etc/awslogs/awscli.conf'
+                - '/etc/awslogs/config/jenkins-agent.conf'
         install:
           packages:
             yum:
-              'java-1.8.0-openjdk': []
+              'java-1.8.0-amazon-corretto': []
           files:
             '/etc/cfn/cfn-hup.conf':
               content: !Sub |
@@ -1304,15 +1366,13 @@ Resources:
                 action=/opt/aws/bin/cfn-init --verbose --stack=${AWS::StackName} --region=${AWS::Region} --resource=AgentLC
                 runas=root
           commands:
-            'a_alternatives':
-              command: '/usr/sbin/alternatives --set java /usr/lib/jvm/jre-1.8.0-openjdk.x86_64/bin/java'
-            'b_groupadd':
+            'a_groupadd':
               command: 'groupadd -g 497 jenkins'
               test: 'if grep -q jenkins: /etc/group; then exit 1; else exit 0; fi'
-            'c_useradd':
-              command: 'adduser -u 498 -g 497 -s /bin/bash -d /var/lib/jenkins -c "Jenkins Continuous Delivery Server" jenkins'
+            'b_useradd':
+              command: 'adduser -u 498 -g 497 -s /bin/bash -d /var/lib/jenkins -c "Jenkins Continuous Integration Server" jenkins'
               test: 'if grep -q jenkins: /etc/passwd; then exit 1; else exit 0; fi'
-            'd_mkdir':
+            'c_mkdir':
               command: 'mkdir /var/lib/jenkins && chown -R jenkins:jenkins /var/lib/jenkins'
               test: '[ ! -d /var/lib/jenkins ]'
           services:
@@ -1323,13 +1383,18 @@ Resources:
                 files:
                 - '/etc/cfn/cfn-hup.conf'
                 - '/etc/cfn/hooks.d/cfn-auto-reloader.conf'
+              amazon-ssm-agent:
+                enabled: true
+                ensureRunning: true
         setup:
           packages:
+            yum:
+              'nfs-utils': []
+              'ruby': []
             rubygems:
-              'aws-sdk':
-              - '3.0.1'
-              daemons:
-              - '1.2.4'
+              'aws-sdk-autoscaling': ['1.13.0']
+              'aws-sdk-ec2': ['1.62.0']
+              daemons: ['1.2.6']
           files:
             '/root/agent.xml':
               content: |
@@ -1434,7 +1499,8 @@ Resources:
               content: |
                 #!/usr/bin/env ruby
                 require 'net/http'
-                require 'aws-sdk'
+                require 'aws-sdk-autoscaling'
+                require 'aws-sdk-ec2'
                 require 'yaml'
                 require 'webrick'
                 require 'syslog/logger'
@@ -1530,12 +1596,12 @@ Resources:
                 - '/opt/agent-healthcheck/daemon.rb'
                 - '/opt/agent-healthcheck/server.rb'
     Properties:
-      ImageId: !Ref InstanceAmi
+      ImageId: !Ref InstanceAMI
       IamInstanceProfile: !Ref AgentIP
       InstanceType: !Ref AgentInstanceType
       SecurityGroups:
       - !Ref AgentSG
-      KeyName: !If [HasKeyName, !Ref KeyName, !Ref 'AWS::NoValue']
+      KeyName: !Ref KeyName
       BlockDeviceMappings:
       - DeviceName: '/dev/xvda'
         Ebs:
@@ -1553,19 +1619,16 @@ Resources:
       LaunchConfigurationName: !Ref AgentLC
       MinSize: !Ref AgentMinSize
       MaxSize: !Ref AgentMaxSize
-      DesiredCapacity: !Ref AgentDesiredCapacity
       HealthCheckGracePeriod: 600
       HealthCheckType: ELB
       TargetGroupARNs:
       - !Ref AgentELBTargetGroup
-      NotificationConfigurations: !If
-      - HasAlertTopic
-      - - NotificationTypes:
-          - 'autoscaling:EC2_INSTANCE_LAUNCH_ERROR'
-          - 'autoscaling:EC2_INSTANCE_TERMINATE_ERROR'
-          TopicARN:
-            'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'
-      - !Ref 'AWS::NoValue'
+      NotificationConfigurations:
+      - NotificationTypes:
+        - 'autoscaling:EC2_INSTANCE_LAUNCH_ERROR'
+        - 'autoscaling:EC2_INSTANCE_TERMINATE_ERROR'
+        TopicARN:
+          'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'
       VPCZoneIdentifier:
       - !Ref PrivateSubnetA
       - !Ref PrivateSubnetB
@@ -1588,7 +1651,6 @@ Resources:
         - ScheduledActions
         WaitOnResourceSignals: true
   AgentCPUTooHighAlarm:
-    Condition: HasAlertTopic
     Type: 'AWS::CloudWatch::Alarm'
     Properties:
       AlarmDescription: 'Agent average CPU utilization over last 10 minutes higher than 80%'
@@ -1608,12 +1670,11 @@ Resources:
     Type: 'AWS::SQS::Queue'
     Properties:
       QueueName: !Sub '${AWS::StackName}-terminating-lifecycle-hook'
-      VisibilityTimeout: !Ref AgentMaxBuildWaitTimeInSeconds
+      VisibilityTimeout: 30
       RedrivePolicy:
         deadLetterTargetArn: !GetAtt 'AgentTerminatingLifecycleHookDeadLetterQueue.Arn'
         maxReceiveCount: 5
   AgentTerminatingLifecycleHookQueueTooHighAlarm:
-    Condition: HasAlertTopic
     Type: 'AWS::CloudWatch::Alarm'
     Properties:
       AlarmDescription: 'Queue contains messages older than 10 minutes, messages are not consumed'
@@ -1634,7 +1695,6 @@ Resources:
     Properties:
       QueueName: !Sub '${AWS::StackName}-terminating-lifecycle-hook-dlq'
   AgentTerminatingLifecycleHookDeadLetterQueueTooHighAlarm:
-    Condition: HasAlertTopic
     Type: 'AWS::CloudWatch::Alarm'
     Properties:
       AlarmDescription: 'Dead letter queue contains messages, message processing failed'
@@ -1688,7 +1748,7 @@ Resources:
     Properties:
       AdjustmentType: ChangeInCapacity
       AutoScalingGroupName: !Ref AgentASG
-      Cooldown: 300
+      Cooldown: '300'
       ScalingAdjustment: 1
   BuildQueueHighAlarm:
     Type: 'AWS::CloudWatch::Alarm'
@@ -1708,31 +1768,22 @@ Resources:
     Properties:
       AdjustmentType: ChangeInCapacity
       AutoScalingGroupName: !Ref AgentASG
-      Cooldown: 300
+      Cooldown: '300'
       ScalingAdjustment: -1
-  BuildActiveEmptyAlarm:
+  BuildActiveQueueEmptyAlarm:
     Type: 'AWS::CloudWatch::Alarm'
     Properties:
-      EvaluationPeriods: 5
+      EvaluationPeriods: 1
       Statistic: Maximum  # special rule because we scale on build queue length
       Threshold: 0
-      AlarmDescription: 'Alarm if Build Queue is empty.'
+      AlarmDescription: 'Alarm if Build Queue is empty and no jobs are active.'
       Period: 120
       AlarmActions:
       - !Ref AgentScalingDownPolicy
       Namespace: !Ref 'AWS::StackName'
       ComparisonOperator: LessThanOrEqualToThreshold
-      MetricName: BuildActive
+      MetricName: BuildActiveQueue
 Outputs:
-  TemplateID:
-    Description: 'Template id.'
-    Value: 'jenkins/jenkins2-ha-agents'
-  TemplateVersion:
-    Description: 'Template version.'
-    Value: '__VERSION__'
-  StackName:
-    Description: 'Stack name.'
-    Value: !Sub '${AWS::StackName}'
   AdminUsername:
     Description: 'User name for the Jenkins admin.'
     Value: admin

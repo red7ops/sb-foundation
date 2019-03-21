@@ -1,3 +1,28 @@
-[
-
-]
+{
+  "Parameters": {
+    "AgentDesiredCapacity": 0,
+    "AgentInstanceType": "t2.micro",
+    "AgentLogsRetentionInDays": 14,
+    "AgentMaxBuildWaitTimeInSeconds": 600,
+    "AgentMaxSize": 2,
+    "AgentMinSize": 0,
+    "AgentVolumeSize": 8,
+    "HostedZoneId": "Z2AG24BSNL5CCF",
+    "HostedZoneName": "red7sportstech.com",
+    "InstanceAmi": "",
+    "JenkinsVersion": "",
+    "KeyName": "jenkins",
+    "MasterAdminPassword": "",
+    "MasterInstanceType": "t2.micro",
+    "MasterLogsRetentionInDays": 30,
+    "MasterVolumeSize": 8,
+    "ParentAlertStack": "SBOpSec",
+    "ParentSSHBastionStack": "SBBastion",
+    "PrivateSubnetA": "subnet3e274d66",
+    "PrivateSubnetB": "subnet264c6542",
+    "PublicSubnetA": "subnet6e274d36",
+    "PublicSubnetB": "subnet794c651d",
+    "SubDomainName": "jenkins",
+    "VpcId": "vpc65db9301"
+  }
+}
