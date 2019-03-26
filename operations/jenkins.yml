@@ -39,6 +39,9 @@ Parameters:
   KeyName:
     Description: 'Key pair of the ec2-user to establish a SSH connection to the Jenkins master and agents.'
     Type: AWS::EC2::KeyPair::KeyName
+  Certificate:
+    Description: 'Certificate manger ARN.'
+    Type: String
   VpcId:
     Description: 'Id of VPC.'
     Type: AWS::EC2::VPC::Id
@@ -214,6 +217,14 @@ Resources:
       FromPort: 80
       ToPort: 80
       CidrIp: '0.0.0.0/0'
+  MasterELBSGInWorld443:
+    Type: 'AWS::EC2::SecurityGroupIngress'
+    Properties:
+      GroupId: !Ref MasterELBSG
+      IpProtocol: tcp
+      FromPort: 443
+      ToPort: 443
+      CidrIp: '0.0.0.0/0'
   MasterHTTPCodeELB5XXTooHighAlarm:
     Type: 'AWS::CloudWatch::Alarm'
     Properties:
@@ -304,7 +315,7 @@ Resources:
       Tags:
       - Key: Name
         Value: 'jenkins-master'
-  MasterELBTargetGroup: # not monitored, but MasterELB is monitored!
+  MasterELBTargetGroup:
     Type: 'AWS::ElasticLoadBalancingV2::TargetGroup'
     Properties:
       HealthCheckIntervalSeconds: 30
@@ -334,6 +345,18 @@ Resources:
       LoadBalancerArn: !Ref MasterELB
       Port: 80
       Protocol: HTTP
+  MasterELBListener443:
+    Type: 'AWS::ElasticLoadBalancingV2::Listener'
+    Properties:
+      DefaultActions:
+      - TargetGroupArn: !Ref MasterELBTargetGroup
+        Type: forward
+      LoadBalancerArn: !Ref MasterELB
+      Port: 443
+      Protocol: HTTPS
+      Certificates:
+      - CertificateArn: !Ref Certificate
+      SslPolicy: ELBSecurityPolicy-TLS-1-1-2017-01
   MasterIP:
     Type: 'AWS::IAM::InstanceProfile'
     Properties:
@@ -355,6 +378,7 @@ Resources:
       Path: '/'
       ManagedPolicyArns:
       - 'arn:aws:iam::aws:policy/service-role/AmazonEC2RoleforSSM' # TODO get rid of managed policy
+      - 'arn:aws:iam::aws:policy/AWSCodeCommitPowerUser'
       Policies:
       - PolicyName: cloudwatch
         PolicyDocument:
@@ -382,6 +406,9 @@ Resources:
             - 'sqs:DeleteMessage'
             - 'sqs:ReceiveMessage'
             - 'sqs:ChangeMessageVisibility'
+            - 'sqs:DeleteMessageBatch'
+            - 'sqs:GetQueueAttributes'
+            - 'sqs:ListQueues'
             Resource: !GetAtt 'AgentTerminatingLifecycleHookQueue.Arn'
       - PolicyName: logs
         PolicyDocument:
@@ -429,6 +456,13 @@ Resources:
       ToPort: 22
       SourceSecurityGroupId:
         'Fn::ImportValue': !Sub '${ParentSSHBastionStack}-SecurityGroup'
+  SourceHookQueue:
+    Type: 'AWS::SQS::Queue'
+    Properties:
+      QueueName: !Sub '${AWS::StackName}-source-hook'
+  SourceHookTopic:
+    Type: 'AWS::SNS::Topic'
+    Properties: {}
   MasterLogs:
     Type: 'AWS::Logs::LogGroup'
     Properties:
@@ -861,6 +895,7 @@ Resources:
                 envinject
                 github-organization-folder
                 gradle
+                nodejs
                 workflow-aggregator
                 pipeline-maven
                 ssh-slaves
@@ -966,7 +1001,7 @@ Resources:
               command: 'service jenkins stop'
               test: '[ ! -f /var/lib/jenkins/setup_done.txt ]'
             'z_create_setup_done_file':
-              command: 'echo "Setup done. Don not delete this file." > /var/lib/jenkins/setup_done.txt'
+              command: 'echo "Setup done. Do not delete this file!" > /var/lib/jenkins/setup_done.txt'
               test: '[ ! -f /var/lib/jenkins/setup_done.txt ]'
         custom:
           packages:
@@ -1152,6 +1187,7 @@ Resources:
       Path: /
       ManagedPolicyArns:
       - 'arn:aws:iam::aws:policy/service-role/AmazonEC2RoleforSSM'
+      - 'arn:aws:iam::aws:policy/AWSCodeCommitPowerUser'
       Policies:
       - PolicyName: ec2
         PolicyDocument:
@@ -1809,3 +1845,20 @@ Outputs:
     Value: !GetAtt 'AgentIAMRole.Arn'
     Export:
       Name: !Sub '${AWS::StackName}-AgentIAMRole'
+
+#/var/lib/jenkins/.gitconfig
+#[credential]
+#        helper = !aws codecommit credential-helper $@
+#        useHttpPath = true
+#[user]
+#        email = jenkins@red7sportstech.com
+#        name = Scoreboard Jenkins
+#[url "https://"]
+#        insteadOf = ssh://
+
+# security updates
+
+# update logging/monitoring
+# yum install gcc g++ -y
+
+# tags
