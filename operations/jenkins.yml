@@ -456,13 +456,37 @@ Resources:
       ToPort: 22
       SourceSecurityGroupId:
         'Fn::ImportValue': !Sub '${ParentSSHBastionStack}-SecurityGroup'
+  SourceHookTopic:
+    Type: 'AWS::SNS::Topic'
+    Properties: {}
   SourceHookQueue:
     Type: 'AWS::SQS::Queue'
     Properties:
       QueueName: !Sub '${AWS::StackName}-source-hook'
-  SourceHookTopic:
-    Type: 'AWS::SNS::Topic'
-    Properties: {}
+  SourceHookQueuePolicy:
+    Type: 'AWS::SQS::QueuePolicy'
+    Properties:
+      PolicyDocument:
+        Id: Id1
+        Version: '2012-10-17'
+        Statement:
+        - Sid: Sid1
+          Effect: Allow
+          Principal: '*'
+          Action: 'SQS:SendMessage'
+          Resource: !Ref SourceHookQueue
+          Condition:
+            ArnEquals:
+              'aws:SourceArn': !Ref SourceHookTopic
+      Queues:
+      - !Ref SourceHookQueue
+  SourceHookSubscription:
+    Type: 'AWS::SNS::Subscription'
+    Properties:
+      TopicArn: !Ref SourceHookTopic
+      Endpoint: !GetAtt SourceHookQueue.Arn
+      Protocol: sqs
+      RawMessageDelivery: 'true'
   MasterLogs:
     Type: 'AWS::Logs::LogGroup'
     Properties:
@@ -1862,3 +1886,6 @@ Outputs:
 # yum install gcc g++ -y
 
 # tags
+# outputs (exports)
+
+# codecommit repo and trigger
