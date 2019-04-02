@@ -38,6 +38,21 @@ Resources:
               - "refs/heads/release"
             Null:
               "codecommit:References": false
+        - Effect: "Deny"
+          Action:
+          - "codecommit:GitPush"
+          - "codecommit:DeleteBranch"
+          - "codecommit:PutFile"
+          - "codecommit:MergePullRequestByFastForward"
+          Resource:
+          - !Sub 'arn:aws:codecommit:${AWS::Region}:${AWS::AccountId}:*'
+          Condition:
+            StringEqualsIfExists:
+              "codecommit:References":
+              - "refs/heads/master"
+              - "refs/heads/release"
+            Null:
+              "codecommit:References": false
 
   IAMPolicy:
     Type: 'AWS::IAM::ManagedPolicy'
@@ -108,7 +123,6 @@ Resources:
         Resource:
         - "*"
 
-#TODO ecs rules
   ECSAutoScalingPolicy:
     Type: 'AWS::IAM::ManagedPolicy'
     Properties:
@@ -123,7 +137,26 @@ Resources:
           - "application-autoscaling:DescribeScalingActivities"
           - "application-autoscaling:DescribeScalingPolicies"
           - "application-autoscaling:RegisterScalableTarget"
-          - "ecs:*"
+          - "ecs:DescribeServices"
+          - "ecs:UpdateService"
+          - "cloudwatch:DescribeAlarms"
+          Resource:
+          - "*"
+
+  ECSPolicy:
+    Type: 'AWS::IAM::ManagedPolicy'
+    Properties:
+      Description: "Policy for ECS services."
+      Path: "/"
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+        - Effect: "Allow"
+          Action:
+          - "ecs:StopTask"
+          - "ecs:Update*"
+          - "ecs:List*"
+          - "ecs:Describe*"
           Resource:
           - "*"
 
@@ -187,6 +220,7 @@ Resources:
       ManagedPolicyArns:
       - "arn:aws:iam::aws:policy/AWSCodePipelineApproverAccess"
       - "arn:aws:iam::aws:policy/AWSHealthFullAccess"
+      Policies:
       - !Ref CodeCommitPolicy
       - !Ref IAMPolicy
       - !Ref EC2Policy
@@ -200,8 +234,10 @@ Resources:
       Path: "/"
       ManagedPolicyArns:
       - "arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryPowerUser"
+      Policies:
       - !Ref CloudFormationPolicy
       - !Ref ECSAutoScalingPolicy
+      - !Ref ECSPolicy
       - !Ref CodeCommitRepoPolicy
       - !Ref EC2SecurityPolicy
       - !Ref SSMPolicy

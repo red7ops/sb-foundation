@@ -12,6 +12,7 @@ Metadata:
         default: 'EC2 Parameters'
       Parameters:
       - KeyName
+      - AccessLogBucket
     - Label:
         default: 'Master Parameters'
       Parameters:
@@ -35,6 +36,9 @@ Parameters:
     Type: String
   ParentAlertStack:
     Description: 'Stack name of parent alert stack.'
+    Type: String
+  AccessLogBucket:
+    Description: 'Bucket name of access log storage bucket.'
     Type: String
   KeyName:
     Description: 'Key pair of the ec2-user to establish a SSH connection to the Jenkins master and agents.'
@@ -306,6 +310,12 @@ Resources:
         Value: !Ref MasterLoadBalancerIdleTimeout
       - Key: 'routing.http2.enabled'
         Value: 'true'
+      - Key: 'access_logs.s3.enabled'
+        Value: true
+      - Key: 'access_logs.s3.prefix'
+        Value: !Ref 'AWS::StackName'
+      - Key: 'access_logs.s3.bucket'
+        Value: !Ref AccessLogBucket
       Scheme: internet-facing
       SecurityGroups:
       - !Ref MasterELBSG
